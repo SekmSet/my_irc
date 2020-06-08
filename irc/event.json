@@ -1,0 +1,21 @@
+{
+    "user": {
+        "new" : "user.new",
+        "disconnect" : "user.disconnect",
+        "nickname" : "user.nickname",
+        "list" : "user.list"
+    },
+
+    "message" : {
+        "new": "message.new",
+        "sendToSombody": "message.sendToSombody"
+    },
+
+    "channel" : {
+        "new" : "channel.new",
+        "delete" : "channel.delete",
+        "join" : "channel.join",
+        "part" : "channel.part"
+    }
+}
+
