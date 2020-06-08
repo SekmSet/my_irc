@@ -3,6 +3,8 @@ const server = require("http").Server(app);
 const io = require("socket.io")(server);
 const next = require("next");
 const ent = require("ent");
+var uniqid = require('uniqid');
+
 
 const events = require("./event.json");
 
@@ -23,12 +25,16 @@ io.on("connection", socket => {
         socket.broadcast.emit(events.user.new, data);
     });
 
-    socket.on("message", function (message) {
-        message = ent.encode(message);
+    socket.on(events.message.new, data => {
+        /*      message = ent.encode(message); */
+        console.log(data);
         // sending to all clients except sender
-        socket.broadcast.emit("message", { nickname: data.value, message: message })
+        socket.broadcast.emit(events.message.new, {
+            nickname: user.nickname,
+            chat: data.chat,
+            id: uniqid()
+        });
         /* console.log(data.value) */
-
     })
 });
 
