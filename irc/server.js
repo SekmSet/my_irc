@@ -2,6 +2,7 @@ const app = require("express")();
 const server = require("http").Server(app);
 const io = require("socket.io")(server);
 const next = require("next");
+const ent = require("ent");
 
 const events = require("./event.json");
 
@@ -11,20 +12,28 @@ const nextApp = next({ dev });
 const nextHandler = nextApp.getRequestHandler();
 
 const messages = [];
+const users = [];
 
 io.on("connection", socket => {
+    let user = null;
+
     socket.on(events.user.new, data => {
-        console.log({ data });
         messages.push(data);
+        user = { nickname: data.value, id: data.id }
         socket.broadcast.emit(events.user.new, data);
     });
 
+    socket.on("message", function (message) {
+        message = ent.encode(message);
+        // sending to all clients except sender
+        socket.broadcast.emit("message", { nickname: data.value, message: message })
+        /* console.log(data.value) */
 
-    //tu fais des fonctions de malade
+    })
 });
 
-nextApp.prepare().then(() => {
 
+nextApp.prepare().then(() => {
     app.get("*", (req, res) => {
         return nextHandler(req, res);
     });
