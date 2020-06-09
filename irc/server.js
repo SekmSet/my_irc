@@ -19,10 +19,19 @@ const users = [];
 io.on("connection", socket => {
     let user = null;
 
+    // socket.emit envoie a moi
+    // socket.broadcast.emit envoie a tous le monde sauf moi
+    //  io.emit envoie à tous le monde
+
     socket.on(events.user.new, data => {
-        messages.push(data);
-        user = { nickname: data.value, id: data.id }
-        socket.broadcast.emit(events.user.new, data);
+        //messages.push(data);
+        user = { nickname: data.value, id: data.id };
+        users.push(user);
+
+        console.log(users);
+        //socket.emit(events.user.new, users);
+        io.emit(events.user.new, users);
+        // socket.emit();
     });
 
     socket.on(events.message.new, data => {
