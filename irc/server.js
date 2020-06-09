@@ -35,18 +35,15 @@ io.on("connection", socket => {
     });
 
     socket.on(events.message.new, data => {
-        /*      message = ent.encode(message); */
         console.log(data);
-        // sending to all clients except sender
-        socket.broadcast.emit(events.message.new, {
+        io.emit(events.message.new, {
             nickname: user.nickname,
             chat: data.chat,
             id: uniqid()
         });
-        /* console.log(data.value) */
+
     })
 });
-
 
 nextApp.prepare().then(() => {
     app.get("*", (req, res) => {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import useSocket from "../hooks/useSocket";
+import { getDisplayName } from "next/dist/next-server/lib/utils";
 const events = require("../event.json");
 
 export default function Blah() {
@@ -30,6 +31,11 @@ export default function Blah() {
         });
         setShowForm(false);
     }
+    /*     function insereMessage(pseudo, message) {
+            $('#zone_chat').prepend('<p><strong>' + pseudo + '</strong> ' + message + '</p>');
+        } */
+
+
 
     function submitchat(e) {
         e.preventDefault();
@@ -60,6 +66,7 @@ export default function Blah() {
                         Channels
                         <hr/>
                     </div>
+
 
                     <div id="message">
                         Le channel actuel
