@@ -34,9 +34,6 @@ export default function Blah() {
     /*     function insereMessage(pseudo, message) {
             $('#zone_chat').prepend('<p><strong>' + pseudo + '</strong> ' + message + '</p>');
         } */
-
-
-
     function submitchat(e) {
         e.preventDefault();
         socket && socket.emit(events.message.new, {
@@ -46,57 +43,111 @@ export default function Blah() {
     }
     // console.log(messages);
     /* console.log(nickname); */
-
     return (
         <div>
             {showForm === true && (
-                <div id="form">
+                <div>
+                    <div className="flex-container-acceuil">
+                        <label>Choose your new pseudo </label>
+                    </div>
+                    <hr className="hr" />
+
                     <form onSubmit={submit}>
                         <input
+                            className="field"
                             value={nickname}
                             onChange={e => setNickname(e.target.value)}
                         />
-                        <button id="button">submit</button>
+                        <button className="button">submit</button>
                     </form>
                 </div>
-            )}
-            { showForm === false && (
-                <div className="flex-container">
-                    <div id="channels">
-                        Channels
-                        <hr/>
-                    </div>
 
 
-                    <div id="message">
-                        Le channel actuel
-                        <hr/>
-                        {messages.map(message => (
-                            <p key={message.id}>{message.nickname}: {message.chat}</p>
-                        ))}
-                        <div id="form-message">
-                            <form onSubmit={submitchat}>
-                                <input
-                                    value={chat}
-                                    onChange={e => setChat(e.target.value)}
-                                />
-                                <button id="button">submit</button>
-                            </form>
+            )
+            }
+            {
+                showForm === false && (
+                    <div className="flex-container">
+                        <div id="channels">
+                            Channels
+                        <hr />
                         </div>
-                    </div>
 
-                    <div id="user">
-                        Membres
+                        <div id="message">
+                            Le channel actuel
+                        <hr />
+                            {messages.map(message => (
+                                <p key={message.id}>{message.nickname}: {message.chat}</p>
+                            ))}
+                            <div className="form-message">
+                                <form className="form-message" onSubmit={submitchat}>
+                                    <input
+                                        value={chat}
+                                        onChange={e => setChat(e.target.value)}
+                                    />
+                                    <button id="button">submit</button>
+                                </form>
+                            </div>
+                        </div>
+                        <div id="user">
+                            Membres
                         {users.map(usr => (
                             <p key={usr.id}>{usr.nickname}</p>
                         ))}
-
-                        <hr />
+                            <hr />
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
+            <style jsx> {`
+             body {
+                margin: 0;
+                padding: 0;
+                font-size: 18px;
+                font-weight: 400;
+                line-height: 1.8;
+                color: #333;
+                font-family: sans-serif;
+            }
 
-            <style  jsx> {`
+            .button {
+                background-color: #393e46; 
+                border: none;
+                color: white;
+                padding: 15px 32px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-size: 16px;
+              }
+            .field {
+
+                margin-top: 1%;
+                margin-left: 42%;
+                width: 15%;
+                height: 56px;
+                border-radius: 4px;
+                position: relative;
+                background-color: #eeeeee;
+                transition: 0.3s all;
+            }
+            .field:hover {
+                background-color: rgba(255, 255, 255, 0.45);
+                box-shadow: 0px 4px 20px 0px rgba(0, 0, 0, 0.05);
+            }
+            .flex-container-acceuil{
+                    display: flex;
+                    font-size: 130px;
+                    justify-content: space-around;
+                    margin-top: 10%;
+                }
+                .hr {
+                    width: 13%;
+                    margin: auto;
+                    padding-bottom: 0.3%;
+                    background-color: black;
+                }
+                
                 .flex-container {
                         display: flex;
                         justify-content: space-around;
@@ -116,9 +167,7 @@ export default function Blah() {
           box-sizing: border-box;
         }
       `}</style>
-        </div>
+        </div >
     );
-
-
 }
 
