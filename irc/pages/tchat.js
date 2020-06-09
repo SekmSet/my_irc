@@ -54,13 +54,16 @@ export default function Blah() {
                     </form>
                 </div>
             )}
-            {showForm === false && (
-                <div id="tchat">
+            { showForm === false && (
+                <div className="flex-container">
                     <div id="channels">
                         Channels
+                        <hr/>
                     </div>
 
                     <div id="message">
+                        Le channel actuel
+                        <hr/>
                         {messages.map(message => (
                             <p key={message.id}>{message.nickname}: {message.chat}</p>
                         ))}
@@ -75,15 +78,39 @@ export default function Blah() {
                         </div>
                     </div>
 
-                    {/*  <div id="user">
+                    <div id="user">
                         Membres
-                        {messages.map(msg => (
-                        <p key={msg.id}>{msg.value}</p>
-                    ))}
+                        {/*{messages.map(msg => (*/}
+                        {/*    <p key={msg.id}>{msg.value}</p>*/}
+                        {/*))}*/}
                         <hr />
-                    </div> */}
+                    </div>
                 </div>
             )}
+
+            <style  jsx> {`
+                .flex-container {
+                        display: flex;
+                        justify-content: space-around;
+                }
+                .flex-container > div {
+                      width: 100%;
+                      margin: 10px 0 0 0;
+                      text-align: center;
+                      border-left : solid 1px grey;
+                  }
+            `}
+            </style>
+            <style jsx global>{`
+        * {
+          padding: 0;
+          margin: 0;
+          box-sizing: border-box;
+        }
+      `}</style>
         </div>
     );
+
+
 }
+
