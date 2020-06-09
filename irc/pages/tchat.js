@@ -5,20 +5,20 @@ const events = require("../event.json");
 export default function Blah() {
     const [messages, setMessages] = useState([]);
     const [chat, setChat] = useState([]);
+    const [users, setUsers] = useState([]);
     const [nickname, setNickname] = useState('');
     const [showForm, setShowForm] = useState(true);
     const socket = useSocket();
 
     useEffect(() => {
         if (socket) {
-            socket.on(events.user.new, message => {
-                /* setMessages(messages => [...messages, nickname]); */
+            socket.on(events.user.new, getUsers => {
+                console.log(getUsers);
+                setUsers(getUsers);
             });
             socket.on(events.message.new, message => {
                 setMessages(messages => [...messages, { nickname: message.nickname, chat: message.chat, id: message.id }])
-                console.log(messages)
             })
-
         }
     }, [socket]);
 
@@ -80,9 +80,10 @@ export default function Blah() {
 
                     <div id="user">
                         Membres
-                        {/*{messages.map(msg => (*/}
-                        {/*    <p key={msg.id}>{msg.value}</p>*/}
-                        {/*))}*/}
+                        {users.map(usr => (
+                            <p key={usr.id}>{usr.nickname}</p>
+                        ))}
+
                         <hr />
                     </div>
                 </div>
