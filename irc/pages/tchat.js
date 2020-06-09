@@ -15,7 +15,7 @@ export default function Blah() {
                 /* setMessages(messages => [...messages, nickname]); */
             });
             socket.on(events.message.new, message => {
-                setMessages(messages => [...messages, { nickname: message.nickname, chat: message.chat }])
+                setMessages(messages => [...messages, { nickname: message.nickname, chat: message.chat, id: message.id }])
                 console.log(messages)
             })
 
@@ -75,13 +75,13 @@ export default function Blah() {
                         </div>
                     </div>
 
-                    <div id="user">
+                    {/*  <div id="user">
                         Membres
                         {messages.map(msg => (
                         <p key={msg.id}>{msg.value}</p>
                     ))}
                         <hr />
-                    </div>
+                    </div> */}
                 </div>
             )}
         </div>
