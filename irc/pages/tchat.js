@@ -8,7 +8,9 @@ export default function Tchat() {
     const [messages, setMessages] = useState([]);
     const [chat, setChat] = useState('');
     const [users, setUsers] = useState([]);
+    const [channels, setChannels] = useState([]);
     const [nickname, setNickname] = useState('');
+    const [channel, setChannel] = useState('');
     const [showForm, setShowForm] = useState(true);
     const socket = useSocket();
 
@@ -17,6 +19,10 @@ export default function Tchat() {
             socket.on(events.user.new, message => {
                 setUsers(userNew => [...userNew, message]);
                 setMessages(ms => [...ms, { nickname: message.nickname, chat: "se connecte", id: uniqid() }]);
+            });
+
+            socket.on(events.channel.new, getChannels => {
+                setChannels(getChannels);
             });
 
             socket.on(events.message.new, message => {
@@ -51,6 +57,15 @@ export default function Tchat() {
         setChat('');
     }
 
+    function newChannel(e) {
+        e.preventDefault();
+        socket && socket.emit(events.channel.new, {
+            id: new Date().getTime(),
+            value: channel
+        });
+        setChannel('');
+    }
+
     return (
         <div>
             {showForm === true && (
@@ -75,12 +90,24 @@ export default function Tchat() {
                 <div className="flex-container">
                     <div id="channels">
                         Channels
-                    <hr />
+                        <hr/>
+
+                        <form onSubmit={newChannel}>
+                            <input
+                                value={channel}
+                                onChange={e => setChannel(e.target.value)}
+                            />
+                            <button id="button">submit</button>
+                        </form>
+
+                        {channels.map(chan => (
+                            <p key={chan.id}>{chan.name}</p>
+                        ))}
                     </div>
 
                     <div id="message">
                         Le channel actuel
-                    <hr />
+                        <hr />
                         {messages.map(message => (
                             <p key={message.id}>{message.nickname}: {message.chat}</p>
                         ))}
@@ -96,6 +123,7 @@ export default function Tchat() {
                     </div>
                     <div id="user">
                         Membres
+                        <hr/>
                         {users.map(usr => (
                             <p key={usr.id}>{usr.nickname}</p>
                         ))}

@@ -15,9 +15,11 @@ const nextHandler = nextApp.getRequestHandler();
 
 const messages = [];
 let users = [];
+const channels = [];
 
 io.on("connection", socket => {
     let user = null;
+    let channel = null;
 
     // socket.emit envoie a moi
     // socket.broadcast.emit envoie a tous le monde sauf moi
@@ -39,6 +41,18 @@ io.on("connection", socket => {
             id: uniqid()
         });
     })
+
+    // CHANNEL
+    socket.on(events.channel.new, data => {
+        //messages.push(data);
+        channel = { name: data.value, id: data.id };
+        channels.push(channel);
+
+        console.log(channels);
+        //socket.emit(events.user.new, users);
+        io.emit(events.channel.new, channels);
+        // socket.emit();
+    });
 
     // DISCONNECT
     socket.on('disconnect', function () {
