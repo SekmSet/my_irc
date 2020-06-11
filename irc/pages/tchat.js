@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import useSocket from "../hooks/useSocket";
-import { getDisplayName } from "next/dist/next-server/lib/utils";
 const events = require("../event.json");
 
-export default function Blah() {
+export default function Tchat() {
     const [messages, setMessages] = useState([]);
     const [chat, setChat] = useState([]);
     const [users, setUsers] = useState([]);
@@ -13,13 +12,19 @@ export default function Blah() {
 
     useEffect(() => {
         if (socket) {
-            socket.on(events.user.new, getUsers => {
-                console.log(getUsers);
-                setUsers(getUsers);
+            socket.on(events.user.new, message => {
+                setUsers(message);
             });
             socket.on(events.message.new, message => {
-                setMessages(messages => [...messages, { nickname: message.nickname, chat: message.chat, id: message.id }])
-            })
+                //setMessages(ms => [...ms, message])
+                setMessages(ms => [...ms, { nickname: message.nickname, chat: message.chat, id: message.id }])
+            });
+            socket.on(events.user.disconnect, message => {
+                // setUsers(function(us) {
+                //     return us.filter(usr => usr.id !== message.id );
+                // });
+                setUsers(us => us.filter(usr => usr.id !== message.id ));
+            });
         }
     }, [socket]);
 
@@ -31,18 +36,14 @@ export default function Blah() {
         });
         setShowForm(false);
     }
-    /*     function insereMessage(pseudo, message) {
-            $('#zone_chat').prepend('<p><strong>' + pseudo + '</strong> ' + message + '</p>');
-        } */
+
     function submitchat(e) {
         e.preventDefault();
         socket && socket.emit(events.message.new, {
             chat
         })
-        console.log(chat);
     }
-    // console.log(messages);
-    /* console.log(nickname); */
+
     return (
         <div>
             {showForm === true && (
@@ -62,43 +63,40 @@ export default function Blah() {
                     </form>
                 </div>
 
+            )}
+            { showForm === false && (
+                <div className="flex-container">
+                    <div id="channels">
+                        Channels
+                    <hr />
+                    </div>
 
-            )
-            }
-            {
-                showForm === false && (
-                    <div className="flex-container">
-                        <div id="channels">
-                            Channels
-                        <hr />
+                    <div id="message">
+                        Le channel actuel
+                    <hr />
+                        {messages.map(message => (
+                            <p key={message.id}>{message.nickname}: {message.chat}</p>
+                        ))}
+                        <div className="form-message">
+                            <form className="form-message" onSubmit={submitchat}>
+                                <input
+                                    value={chat}
+                                    onChange={e => setChat(e.target.value)}
+                                />
+                                <button id="button">submit</button>
+                            </form>
                         </div>
-
-                        <div id="message">
-                            Le channel actuel
-                        <hr />
-                            {messages.map(message => (
-                                <p key={message.id}>{message.nickname}: {message.chat}</p>
-                            ))}
-                            <div className="form-message">
-                                <form className="form-message" onSubmit={submitchat}>
-                                    <input
-                                        value={chat}
-                                        onChange={e => setChat(e.target.value)}
-                                    />
-                                    <button id="button">submit</button>
-                                </form>
-                            </div>
-                        </div>
-                        <div id="user">
-                            Membres
+                    </div>
+                    <div id="user">
+                        Membres
                         {users.map(usr => (
                             <p key={usr.id}>{usr.nickname}</p>
                         ))}
-                            <hr />
-                        </div>
+                        <hr />
                     </div>
-                )
-            }
+                </div>
+            )}
+
             <style jsx> {`
              body {
                 margin: 0;
@@ -161,12 +159,12 @@ export default function Blah() {
             `}
             </style>
             <style jsx global>{`
-        * {
-          padding: 0;
-          margin: 0;
-          box-sizing: border-box;
-        }
-      `}</style>
+                * {
+                  padding: 0;
+                  margin: 0;
+                  box-sizing: border-box;
+                }
+            `}</style>
         </div >
     );
 }
