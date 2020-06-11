@@ -16,10 +16,12 @@ export default function Tchat() {
 
     useEffect(() => {
         if (socket) {
+            // USER
             socket.on(events.user.new, message => {
                 // si message = array alors définir la liste d'user
-                if(Array.isArray(message)){
-                    setUsers(message);
+                if(message.users && message.channels){
+                    setUsers(message.users);
+                    setChannels(message.channels);
                 } else {
                     // si message = object ajouter l'utilisateur
                     setUsers(userNew => [...userNew, message]);
@@ -27,6 +29,7 @@ export default function Tchat() {
                 }
             });
 
+            // CHANNEL
             socket.on(events.channel.new, message => {
                 setChannels(channelNew => [...channelNew, message]);
                 setMessages(ms => [...ms, { nickname: message.user.nickname, chat: ` a créé un nouveau channel ${message.name}`, id: uniqid() }]);

@@ -29,8 +29,7 @@ io.on("connection", socket => {
         user = { nickname: data.value, id: data.id };
         users.push(user);
         // pour moi tu envois tous les users
-        socket.emit(events.user.new, users);
-
+        socket.emit(events.user.new, {users, channels});
         // pour les autres tu envois le nouvel user
         socket.broadcast.emit(events.user.new, user);
     });
@@ -48,9 +47,8 @@ io.on("connection", socket => {
         //messages.push(data);
         channel = { name: data.value, id: data.id, user };
         channels.push(channel);
-        //socket.emit(events.user.new, users);
+
         io.emit(events.channel.new, channel);
-        // socket.emit();
     });
 
     // DISCONNECT
