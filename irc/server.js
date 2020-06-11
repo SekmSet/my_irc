@@ -19,13 +19,20 @@ const channels = [];
 
 io.on("connection", socket => {
     let user = null;
-    let channel = null;
+    let channel = 'default';
 
     // socket.emit envoie a moi
     // socket.broadcast.emit envoie a tous le monde sauf moi
     // io.emit envoie à tous le monde
 
+    // socket.broadcast.to(_channelName).emit ->  all in a channel without me
+    // io.in(_channelName).emit -> all in a channel with me
+    // socket.broadcast.to(socketid).emit -> One user with specific id
+
+    // USER
     socket.on(events.user.new, data => {
+        socket.join(channel)
+
         user = { nickname: data.value, id: data.id };
         users.push(user);
         // pour moi tu envois tous les users
@@ -34,21 +41,34 @@ io.on("connection", socket => {
         socket.broadcast.emit(events.user.new, user);
     });
 
-    socket.on(events.message.new, data => {
-        io.emit(events.message.new, {
+    socket.on(events.message.new, (data, room) => {
+        console.log(room, data)
+        io.in(room).emit(events.message.new, {
             nickname: user.nickname,
             chat: data.chat,
             id: uniqid()
         });
     })
 
-    // CHANNEL
+    // CHANNEL CREATE
     socket.on(events.channel.new, data => {
         //messages.push(data);
         channel = { name: data.value, id: data.id, user };
         channels.push(channel);
 
         io.emit(events.channel.new, channel);
+    });
+
+    // CHANNEL JOIN
+    socket.on(events.channel.join, data => {
+       console.log(user, 'join a channel', data);
+        socket.join(data);
+    });
+
+    // CHANNEL LEAVE
+    socket.on(events.channel.part, data => {
+        console.log('leave a channel', data);
+        socket.leave(data);
     });
 
     // DISCONNECT

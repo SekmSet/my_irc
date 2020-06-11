@@ -4,6 +4,8 @@ import uniqid from 'uniqid';
 import useSocket from "../hooks/useSocket";
 const events = require("../event.json");
 
+const defaultChannelName = 'default';
+
 export default function Tchat() {
     const [messages, setMessages] = useState([]);
     const [chat, setChat] = useState('');
@@ -11,6 +13,7 @@ export default function Tchat() {
     const [channels, setChannels] = useState([]);
     const [nickname, setNickname] = useState('');
     const [channel, setChannel] = useState('');
+    const [selectedChannel, setSelectedChannel] = useState(defaultChannelName);
     const [showForm, setShowForm] = useState(true);
     const socket = useSocket();
 
@@ -47,6 +50,15 @@ export default function Tchat() {
                 setUsers(us => us.filter(usr => usr.id !== message.id ));
                 setMessages(ms => [...ms, { nickname: message.nickname, chat: "s'est déconnecte", id: uniqid() }])
             });
+
+            // CHANNEL JOIN
+
+            // CHANNEL LEAVE
+            // socket.on(events.channel.join, message => {
+            //     setChannels(channelNew => [...channelNew, message]);
+            //     setMessages(ms => [...ms, { nickname: message.user.nickname, chat: ` a rejoint ce channel ${message.name}`, id: uniqid() }]);
+            // });
+
         }
     }, [socket]);
 
@@ -63,7 +75,8 @@ export default function Tchat() {
         e.preventDefault();
         socket && socket.emit(events.message.new, {
             chat
-        })
+        }, selectedChannel)
+
         setChat('');
     }
 
@@ -74,6 +87,12 @@ export default function Tchat() {
             value: channel
         });
         setChannel('');
+    }
+
+    function joinChannel(channelName){
+        console.log('je click sur le boutton pour rejoindre le channel : ' , channelName)
+        socket && socket.emit(events.channel.join, channelName);
+        setSelectedChannel(channelName);
     }
 
     return (
@@ -110,8 +129,9 @@ export default function Tchat() {
                             <button id="button">submit</button>
                         </form>
 
+                        <button onClick={() => joinChannel(defaultChannelName)} key={defaultChannelName}>{defaultChannelName}</button>
                         {channels.map(chan => (
-                            <p key={chan.id}>{chan.name}</p>
+                            <button onClick={() => joinChannel(chan.name)} key={chan.id}>{chan.name}</button>
                         ))}
                     </div>
 
