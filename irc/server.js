@@ -28,7 +28,7 @@ io.on("connection", socket => {
         user = { nickname: data.value, id: data.id };
         users.push(user);
         //socket.emit(events.user.new, users);
-        io.emit(events.user.new, users);
+        io.emit(events.user.new, user);
         // socket.emit();
     });
 

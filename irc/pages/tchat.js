@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import uniqid from 'uniqid';
+
 import useSocket from "../hooks/useSocket";
 const events = require("../event.json");
 
 export default function Tchat() {
     const [messages, setMessages] = useState([]);
-    const [chat, setChat] = useState([]);
+    const [chat, setChat] = useState('');
     const [users, setUsers] = useState([]);
     const [nickname, setNickname] = useState('');
     const [showForm, setShowForm] = useState(true);
@@ -13,17 +15,21 @@ export default function Tchat() {
     useEffect(() => {
         if (socket) {
             socket.on(events.user.new, message => {
-                setUsers(message);
+                setUsers(userNew => [...userNew, message]);
+                setMessages(ms => [...ms, { nickname: message.nickname, chat: "se connecte", id: uniqid() }]);
             });
+
             socket.on(events.message.new, message => {
                 //setMessages(ms => [...ms, message])
                 setMessages(ms => [...ms, { nickname: message.nickname, chat: message.chat, id: message.id }])
             });
+
             socket.on(events.user.disconnect, message => {
                 // setUsers(function(us) {
                 //     return us.filter(usr => usr.id !== message.id );
                 // });
                 setUsers(us => us.filter(usr => usr.id !== message.id ));
+                setMessages(ms => [...ms, { nickname: message.nickname, chat: "se déconnecte", id: uniqid() }])
             });
         }
     }, [socket]);
@@ -42,6 +48,7 @@ export default function Tchat() {
         socket && socket.emit(events.message.new, {
             chat
         })
+        setChat('');
     }
 
     return (
