@@ -14,7 +14,7 @@ const nextApp = next({ dev });
 const nextHandler = nextApp.getRequestHandler();
 
 const messages = [];
-const users = [];
+let users = [];
 
 io.on("connection", socket => {
     let user = null;
@@ -27,22 +27,26 @@ io.on("connection", socket => {
         //messages.push(data);
         user = { nickname: data.value, id: data.id };
         users.push(user);
-
-        console.log(users);
         //socket.emit(events.user.new, users);
-        io.emit(events.user.new, users);
+        io.emit(events.user.new, user);
         // socket.emit();
     });
 
     socket.on(events.message.new, data => {
-        console.log(data);
         io.emit(events.message.new, {
             nickname: user.nickname,
             chat: data.chat,
             id: uniqid()
         });
-
     })
+
+    // DISCONNECT
+    socket.on('disconnect', function () {
+        if (user) {
+            socket.broadcast.emit(events.user.disconnect, user);
+            users = users.filter(usr => usr.id !== user.id );
+        }
+    });
 });
 
 nextApp.prepare().then(() => {
