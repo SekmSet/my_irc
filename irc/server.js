@@ -23,15 +23,16 @@ io.on("connection", socket => {
 
     // socket.emit envoie a moi
     // socket.broadcast.emit envoie a tous le monde sauf moi
-    //  io.emit envoie à tous le monde
+    // io.emit envoie à tous le monde
 
     socket.on(events.user.new, data => {
-        //messages.push(data);
         user = { nickname: data.value, id: data.id };
         users.push(user);
-        //socket.emit(events.user.new, users);
-        io.emit(events.user.new, user);
-        // socket.emit();
+        // pour moi tu envois tous les users
+        socket.emit(events.user.new, users);
+
+        // pour les autres tu envois le nouvel user
+        socket.broadcast.emit(events.user.new, user);
     });
 
     socket.on(events.message.new, data => {
@@ -45,12 +46,10 @@ io.on("connection", socket => {
     // CHANNEL
     socket.on(events.channel.new, data => {
         //messages.push(data);
-        channel = { name: data.value, id: data.id };
+        channel = { name: data.value, id: data.id, user };
         channels.push(channel);
-
-        console.log(channels);
         //socket.emit(events.user.new, users);
-        io.emit(events.channel.new, channels);
+        io.emit(events.channel.new, channel);
         // socket.emit();
     });
 

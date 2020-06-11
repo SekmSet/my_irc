@@ -17,12 +17,19 @@ export default function Tchat() {
     useEffect(() => {
         if (socket) {
             socket.on(events.user.new, message => {
-                setUsers(userNew => [...userNew, message]);
-                setMessages(ms => [...ms, { nickname: message.nickname, chat: "se connecte", id: uniqid() }]);
+                // si message = array alors définir la liste d'user
+                if(Array.isArray(message)){
+                    setUsers(message);
+                } else {
+                    // si message = object ajouter l'utilisateur
+                    setUsers(userNew => [...userNew, message]);
+                    setMessages(ms => [...ms, { nickname: message.nickname, chat: "s'est connecte", id: uniqid() }]);
+                }
             });
 
-            socket.on(events.channel.new, getChannels => {
-                setChannels(getChannels);
+            socket.on(events.channel.new, message => {
+                setChannels(channelNew => [...channelNew, message]);
+                setMessages(ms => [...ms, { nickname: message.user.nickname, chat: ` a créé un nouveau channel ${message.name}`, id: uniqid() }]);
             });
 
             socket.on(events.message.new, message => {
@@ -35,7 +42,7 @@ export default function Tchat() {
                 //     return us.filter(usr => usr.id !== message.id );
                 // });
                 setUsers(us => us.filter(usr => usr.id !== message.id ));
-                setMessages(ms => [...ms, { nickname: message.nickname, chat: "se déconnecte", id: uniqid() }])
+                setMessages(ms => [...ms, { nickname: message.nickname, chat: "s'est déconnecte", id: uniqid() }])
             });
         }
     }, [socket]);
