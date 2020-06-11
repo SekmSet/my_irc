@@ -82,11 +82,15 @@ export default function Tchat() {
 
     function newChannel(e) {
         e.preventDefault();
-        socket && socket.emit(events.channel.new, {
-            id: new Date().getTime(),
-            value: channel
-        });
-        setChannel('');
+        if(channel !== ''){
+            socket && socket.emit(events.channel.new, {
+                id: new Date().getTime(),
+                value: channel
+            });
+            setChannel('');
+        } else {
+            console.log('Name channel is undefined');
+        }
     }
 
     function joinChannel(channelName){
@@ -129,10 +133,16 @@ export default function Tchat() {
                             <button id="button">submit</button>
                         </form>
 
-                        <button onClick={() => joinChannel(defaultChannelName)} key={defaultChannelName}>{defaultChannelName}</button>
-                        {channels.map(chan => (
-                            <button onClick={() => joinChannel(chan.name)} key={chan.id}>{chan.name}</button>
-                        ))}
+                        <ul>
+                            <li>
+                                <button className="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded" onClick={() => joinChannel(defaultChannelName)} key={defaultChannelName}>{defaultChannelName}</button>
+                            </li>
+                            {channels.map(chan => (
+                                <li key={chan.id}>
+                                    <button className="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded" onClick={() => joinChannel(chan.name)}>{chan.name}</button>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
 
                     <div id="message">
