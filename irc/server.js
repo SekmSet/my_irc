@@ -41,6 +41,7 @@ io.on("connection", socket => {
         socket.broadcast.emit(events.user.new, user);
     });
 
+    // MESSAGE
     socket.on(events.message.new, (data, room) => {
         console.log(room, data)
         io.in(room).emit(events.message.new, {
