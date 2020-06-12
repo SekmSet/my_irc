@@ -4,19 +4,38 @@ import uniqid from 'uniqid';
 import useSocket from "../hooks/useSocket";
 const events = require("../event.json");
 
+const defaultChannelName = 'default';
+
 export default function Tchat() {
     const [messages, setMessages] = useState([]);
     const [chat, setChat] = useState('');
     const [users, setUsers] = useState([]);
+    const [channels, setChannels] = useState([]);
     const [nickname, setNickname] = useState('');
+    const [channel, setChannel] = useState('');
+    const [selectedChannel, setSelectedChannel] = useState(defaultChannelName);
     const [showForm, setShowForm] = useState(true);
     const socket = useSocket();
 
     useEffect(() => {
         if (socket) {
+            // USER
             socket.on(events.user.new, message => {
-                setUsers(userNew => [...userNew, message]);
-                setMessages(ms => [...ms, { nickname: message.nickname, chat: "se connecte", id: uniqid() }]);
+                // si message = array alors définir la liste d'user
+                if(message.users && message.channels){
+                    setUsers(message.users);
+                    setChannels(message.channels);
+                } else {
+                    // si message = object ajouter l'utilisateur
+                    setUsers(userNew => [...userNew, message]);
+                    setMessages(ms => [...ms, { nickname: message.nickname, chat: "s'est connecte", id: uniqid() }]);
+                }
+            });
+
+            // CHANNEL
+            socket.on(events.channel.new, message => {
+                setChannels(channelNew => [...channelNew, message]);
+                setMessages(ms => [...ms, { nickname: message.user.nickname, chat: ` a créé un nouveau channel ${message.name}`, id: uniqid() }]);
             });
 
             socket.on(events.message.new, message => {
@@ -29,8 +48,17 @@ export default function Tchat() {
                 //     return us.filter(usr => usr.id !== message.id );
                 // });
                 setUsers(us => us.filter(usr => usr.id !== message.id ));
-                setMessages(ms => [...ms, { nickname: message.nickname, chat: "se déconnecte", id: uniqid() }])
+                setMessages(ms => [...ms, { nickname: message.nickname, chat: "s'est déconnecte", id: uniqid() }])
             });
+
+            // CHANNEL JOIN
+
+            // CHANNEL LEAVE
+            // socket.on(events.channel.join, message => {
+            //     setChannels(channelNew => [...channelNew, message]);
+            //     setMessages(ms => [...ms, { nickname: message.user.nickname, chat: ` a rejoint ce channel ${message.name}`, id: uniqid() }]);
+            // });
+
         }
     }, [socket]);
 
@@ -47,8 +75,28 @@ export default function Tchat() {
         e.preventDefault();
         socket && socket.emit(events.message.new, {
             chat
-        })
+        }, selectedChannel)
+
         setChat('');
+    }
+
+    function newChannel(e) {
+        e.preventDefault();
+        if(channel !== ''){
+            socket && socket.emit(events.channel.new, {
+                id: new Date().getTime(),
+                value: channel
+            });
+            setChannel('');
+        } else {
+            console.log('Name channel is undefined');
+        }
+    }
+
+    function joinChannel(channelName){
+        console.log('je click sur le boutton pour rejoindre le channel : ' , channelName)
+        socket && socket.emit(events.channel.join, channelName);
+        setSelectedChannel(channelName);
     }
 
     return (
@@ -75,12 +123,31 @@ export default function Tchat() {
                 <div className="flex-container">
                     <div id="channels">
                         Channels
-                    <hr />
+                        <hr/>
+
+                        <form onSubmit={newChannel}>
+                            <input
+                                value={channel}
+                                onChange={e => setChannel(e.target.value)}
+                            />
+                            <button id="button">submit</button>
+                        </form>
+
+                        <ul>
+                            <li>
+                                <button className="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded" onClick={() => joinChannel(defaultChannelName)} key={defaultChannelName}>{defaultChannelName}</button>
+                            </li>
+                            {channels.map(chan => (
+                                <li key={chan.id}>
+                                    <button className="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded" onClick={() => joinChannel(chan.name)}>{chan.name}</button>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
 
                     <div id="message">
                         Le channel actuel
-                    <hr />
+                        <hr />
                         {messages.map(message => (
                             <p key={message.id}>{message.nickname}: {message.chat}</p>
                         ))}
@@ -96,6 +163,7 @@ export default function Tchat() {
                     </div>
                     <div id="user">
                         Membres
+                        <hr/>
                         {users.map(usr => (
                             <p key={usr.id}>{usr.nickname}</p>
                         ))}
