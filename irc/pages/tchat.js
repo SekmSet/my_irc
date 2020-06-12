@@ -22,7 +22,7 @@ export default function Tchat() {
             // USER
             socket.on(events.user.new, message => {
                 // si message = array alors définir la liste d'user
-                if(message.users && message.channels){
+                if (message.users && message.channels) {
                     setUsers(message.users);
                     setChannels(message.channels);
                 } else {
@@ -33,6 +33,10 @@ export default function Tchat() {
             });
 
             // CHANNEL
+            socket.on(events.channel.new, channels => {
+                setChannels(channels);
+            });
+
             socket.on(events.channel.new, message => {
                 setChannels(channelNew => [...channelNew, message]);
                 setMessages(ms => [...ms, { nickname: message.user.nickname, chat: ` a créé un nouveau channel ${message.name}`, id: uniqid() }]);
@@ -47,7 +51,7 @@ export default function Tchat() {
                 // setUsers(function(us) {
                 //     return us.filter(usr => usr.id !== message.id );
                 // });
-                setUsers(us => us.filter(usr => usr.id !== message.id ));
+                setUsers(us => us.filter(usr => usr.id !== message.id));
                 setMessages(ms => [...ms, { nickname: message.nickname, chat: "s'est déconnecte", id: uniqid() }])
             });
 
@@ -82,7 +86,7 @@ export default function Tchat() {
 
     function newChannel(e) {
         e.preventDefault();
-        if(channel !== ''){
+        if (channel !== '') {
             socket && socket.emit(events.channel.new, {
                 id: new Date().getTime(),
                 value: channel
@@ -93,10 +97,15 @@ export default function Tchat() {
         }
     }
 
-    function joinChannel(channelName){
-        console.log('je click sur le boutton pour rejoindre le channel : ' , channelName)
+    function joinChannel(channelName) {
+        console.log('je click sur le boutton pour rejoindre le channel : ', channelName)
         socket && socket.emit(events.channel.join, channelName);
         setSelectedChannel(channelName);
+    }
+
+    function deleteChannel(chan) {
+        socket && socket.emit(events.channel.delete, chan);
+
     }
 
     return (
@@ -119,12 +128,11 @@ export default function Tchat() {
                 </div>
 
             )}
-            { showForm === false && (
+            {showForm === false && (
                 <div className="flex-container">
                     <div id="channels">
                         Channels
-                        <hr/>
-
+                        <hr />
                         <form onSubmit={newChannel}>
                             <input
                                 value={channel}
@@ -137,11 +145,14 @@ export default function Tchat() {
                             <li>
                                 <button className="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded" onClick={() => joinChannel(defaultChannelName)} key={defaultChannelName}>{defaultChannelName}</button>
                             </li>
+
                             {channels.map(chan => (
                                 <li key={chan.id}>
                                     <button className="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded" onClick={() => joinChannel(chan.name)}>{chan.name}</button>
+                                    <button className="bg-grey-500 hover:bg-grey-400 text-grey font-bold py-2 px-4 border-b-4 border-grey-700 hover:border-grey-500 rounded" onClick={() => deleteChannel(chan)} >🗑️</button>
                                 </li>
                             ))}
+
                         </ul>
                     </div>
 
@@ -163,7 +174,7 @@ export default function Tchat() {
                     </div>
                     <div id="user">
                         Membres
-                        <hr/>
+                        <hr />
                         {users.map(usr => (
                             <p key={usr.id}>{usr.nickname}</p>
                         ))}
