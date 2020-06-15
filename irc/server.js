@@ -47,7 +47,8 @@ io.on("connection", socket => {
         io.in(room).emit(events.message.new, {
             nickname: user.nickname,
             chat: data.chat,
-            id: uniqid()
+            id: uniqid(),
+            room: room
         });
     })
 

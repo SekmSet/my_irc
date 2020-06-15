@@ -1,10 +1,28 @@
 import { useEffect, useState } from "react";
 import uniqid from 'uniqid';
-
 import useSocket from "../hooks/useSocket";
 const events = require("../event.json");
-
 const defaultChannelName = 'default';
+
+// [
+//     {
+//         "message": '',
+//         "nickname": '',
+//         "id": '',
+//     }
+// ]
+
+//     {
+//         chan1: [
+//             {
+//                 "message": '',
+//                 "nickname": '',
+//                 "id": '',
+//             }
+//         ],
+//     }
+
+let selectedChannel = defaultChannelName;
 
 export default function Tchat() {
     const [messages, setMessages] = useState([]);
@@ -13,7 +31,6 @@ export default function Tchat() {
     const [channels, setChannels] = useState([]);
     const [nickname, setNickname] = useState('');
     const [channel, setChannel] = useState('');
-    const [selectedChannel, setSelectedChannel] = useState(defaultChannelName);
     const [showForm, setShowForm] = useState(true);
     const socket = useSocket();
 
@@ -32,23 +49,27 @@ export default function Tchat() {
                 }
             });
 
-            // CHANNEL
-            socket.on(events.channel.new, message => {
-                setChannels(channelNew => [...channelNew, message]);
-                setMessages(ms => [...ms, { nickname: message.user.nickname, chat: ` a créé un nouveau channel ${message.name}`, id: uniqid() }]);
-            });
-
-            socket.on(events.message.new, message => {
-                //setMessages(ms => [...ms, message])
-                setMessages(ms => [...ms, { nickname: message.nickname, chat: message.chat, id: message.id }])
-            });
-
             socket.on(events.user.disconnect, message => {
                 // setUsers(function(us) {
                 //     return us.filter(usr => usr.id !== message.id );
                 // });
                 setUsers(us => us.filter(usr => usr.id !== message.id ));
                 setMessages(ms => [...ms, { nickname: message.nickname, chat: "s'est déconnecte", id: uniqid() }])
+            });
+
+            // CHANNEL
+            socket.on(events.channel.new, message => {
+                setChannels(channelNew => [...channelNew, message]);
+                setMessages(ms => [...ms, { nickname: message.user.nickname, chat: ` a créé un nouveau channel ${message.name}`, id: uniqid() }]);
+            });
+
+            // MESSAGE
+            socket.on(events.message.new, message => {
+                //setMessages(ms => [...ms, message])
+                if (selectedChannel !== message.room) {
+                    return;
+                }
+                setMessages(ms => [...ms, { nickname: message.nickname, chat: message.chat, id: message.id }])
             });
 
             // CHANNEL JOIN
@@ -96,7 +117,10 @@ export default function Tchat() {
     function joinChannel(channelName){
         console.log('je click sur le boutton pour rejoindre le channel : ' , channelName)
         socket && socket.emit(events.channel.join, channelName);
-        setSelectedChannel(channelName);
+        if(selectedChannel !== channelName){
+            setMessages([]);
+        }
+        selectedChannel = channelName;
     }
 
     return (
