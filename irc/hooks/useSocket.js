@@ -11,10 +11,6 @@ export default function useSocket(cb) {
         if (activeSocket || !socket) return;
         cb && cb(socket);
         setActiveSocket(socket);
-        return function cleanup() {
-            // debug("Running useSocket cleanup", { socket });
-            socket.off("message.chat1", cb);
-        };
     }, [socket]);
 
     return activeSocket;

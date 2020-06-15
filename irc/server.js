@@ -12,6 +12,7 @@ const port = parseInt(process.env.PORT) || 3000;
 const dev = process.env.NODE_ENV !== "production";
 const nextApp = next({ dev });
 const nextHandler = nextApp.getRequestHandler();
+const regex = /\/(msg|nick|delete|create|list|part|join) (\w*) ?(.*)/gm;
 
 const messages = [];
 let users = [];
@@ -43,7 +44,23 @@ io.on("connection", socket => {
 
     // MESSAGE
     socket.on(events.message.new, (data, room) => {
-        console.log(room, data)
+        const parseMessage = regex.exec(data.chat);
+        let commandName = null;
+        let commandMessage = null;
+
+        if(parseMessage){
+             commandName = parseMessage[1];
+             commandMessage = parseMessage[2];
+        }
+
+        if(commandName === 'nick'){
+            let tmpUsername = user.nickname
+            user.nickname = commandMessage;
+            data.chat = `${tmpUsername} a changé son username est s'appelle mainement ${user.nickname}`;
+            socket.emit(events.user.nickname, {user, oldNickname: tmpUsername, me: true});
+            socket.broadcast.emit(events.user.nickname, {user, oldNickname: tmpUsername, me: false});
+        }
+
         io.in(room).emit(events.message.new, {
             nickname: user.nickname,
             chat: data.chat,
@@ -51,13 +68,12 @@ io.on("connection", socket => {
             room: room
         });
     })
-
     // CHANNEL CREATE
     socket.on(events.channel.new, data => {
         //messages.push(data);
         channel = { name: data.value, id: data.id, user };
+        console.log(data.value);
         channels.push(channel);
-
         io.emit(events.channel.new, channel);
     });
 
@@ -81,7 +97,6 @@ io.on("connection", socket => {
         }
     });
 });
-
 nextApp.prepare().then(() => {
     app.get("*", (req, res) => {
         return nextHandler(req, res);

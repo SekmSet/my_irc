@@ -4,24 +4,6 @@ import useSocket from "../hooks/useSocket";
 const events = require("../event.json");
 const defaultChannelName = 'default';
 
-// [
-//     {
-//         "message": '',
-//         "nickname": '',
-//         "id": '',
-//     }
-// ]
-
-//     {
-//         chan1: [
-//             {
-//                 "message": '',
-//                 "nickname": '',
-//                 "id": '',
-//             }
-//         ],
-//     }
-
 let selectedChannel = defaultChannelName;
 
 export default function Tchat() {
@@ -56,6 +38,19 @@ export default function Tchat() {
                 setUsers(us => us.filter(usr => usr.id !== message.id ));
                 setMessages(ms => [...ms, { nickname: message.nickname, chat: "s'est déconnecte", id: uniqid() }])
             });
+
+            socket.on(events.user.nickname, userNickname => {
+                if (userNickname.me) {
+                    setNickname(userNickname.user.nickname);
+                }
+
+                setUsers(us => us.map((u) => {
+                    if(u.nickname !== userNickname.oldNickname){
+                        u.nickname = userNickname.user.nickname;
+                    }
+                    return u;
+                }));
+            })
 
             // CHANNEL
             socket.on(events.channel.new, message => {
@@ -186,7 +181,7 @@ export default function Tchat() {
                         </div>
                     </div>
                     <div id="user">
-                        Membres
+                        Membres {nickname}
                         <hr/>
                         {users.map(usr => (
                             <p key={usr.id}>{usr.nickname}</p>
