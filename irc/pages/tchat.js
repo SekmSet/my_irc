@@ -35,7 +35,7 @@ export default function Tchat() {
                 // setUsers(function(us) {
                 //     return us.filter(usr => usr.id !== message.id );
                 // });
-                setUsers(us => us.filter(usr => usr.id !== message.id ));
+                setUsers(us => us.filter(usr => usr.id !== message.id));
                 setMessages(ms => [...ms, { nickname: message.nickname, chat: "s'est déconnecte", id: uniqid() }])
             });
 
@@ -45,7 +45,7 @@ export default function Tchat() {
                 }
 
                 setUsers(us => us.map((u) => {
-                    if(u.nickname !== userNickname.oldNickname){
+                    if (u.nickname !== userNickname.oldNickname) {
                         u.nickname = userNickname.user.nickname;
                     }
                     return u;
@@ -53,9 +53,7 @@ export default function Tchat() {
             })
 
             // CHANNEL
-            socket.on(events.channel.new, channels => {
-                setChannels(channels);
-            });
+
 
             socket.on(events.channel.new, message => {
                 setChannels(channelNew => [...channelNew, message]);
@@ -73,7 +71,7 @@ export default function Tchat() {
 
             // CHANNEL JOIN
             socket.on(events.channel.join, message => {
-                if(selectedChannel !== message.name){
+                if (selectedChannel !== message.name) {
                     setMessages([]);
                 }
                 selectedChannel = message.name;
@@ -116,9 +114,9 @@ export default function Tchat() {
         }
     }
 
-    function joinChannel(channelName){
+    function joinChannel(channelName) {
         socket && socket.emit(events.channel.join, channelName);
-        if(selectedChannel !== channelName){
+        if (selectedChannel !== channelName) {
             setMessages([]);
         }
         selectedChannel = channelName;
@@ -195,7 +193,7 @@ export default function Tchat() {
                     </div>
                     <div id="user">
                         Membres {nickname}
-                        <hr/>
+                        <hr />
                         {users.map(usr => (
                             <p key={usr.id}>{usr.nickname}</p>
                         ))}
