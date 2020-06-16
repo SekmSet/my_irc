@@ -18,8 +18,6 @@ let users = [];
 const channels = [];
 
 function createNewChannel(data, user) {
-    //messages.push(data);
-    console.log(data, user);
     channel = {name: data.value, id: data.id, user};
     channels.push(channel);
     io.emit(events.channel.new, channel);
@@ -73,6 +71,9 @@ io.on("connection", socket => {
                 value: commandMessage,
                 id: uniqid()
             }, user)
+        } else if(commandName === 'join'){
+            socket.join(commandMessage);
+            io.in(commandMessage).emit(events.channel.join, {name: commandMessage, user});
         } else {
             io.in(room).emit(events.message.new, {
                 nickname: user.nickname,
@@ -91,8 +92,7 @@ io.on("connection", socket => {
 
     // CHANNEL JOIN
     socket.on(events.channel.join, data => {
-       console.log(user, 'join a channel', data);
-        socket.join(data);
+       socket.join(data);
     });
 
     // CHANNEL LEAVE

@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import uniqid from 'uniqid';
 import useSocket from "../hooks/useSocket";
 const events = require("../event.json");
-const defaultChannelName = 'default';
 
+const defaultChannelName = 'default';
 let selectedChannel = defaultChannelName;
 
 export default function Tchat() {
@@ -68,12 +68,15 @@ export default function Tchat() {
             });
 
             // CHANNEL JOIN
-
+            socket.on(events.channel.join, message => {
+                if(selectedChannel !== message.name){
+                    setMessages([]);
+                }
+                selectedChannel = message.name;
+                setMessages(ms => [...ms, { nickname: message.user.nickname, chat: ` a rejoint ce channel ${message.name}`, id: uniqid() }]);
+            });
             // CHANNEL LEAVE
-            // socket.on(events.channel.join, message => {
-            //     setChannels(channelNew => [...channelNew, message]);
-            //     setMessages(ms => [...ms, { nickname: message.user.nickname, chat: ` a rejoint ce channel ${message.name}`, id: uniqid() }]);
-            // });
+
 
         }
     }, [socket]);
@@ -110,7 +113,6 @@ export default function Tchat() {
     }
 
     function joinChannel(channelName){
-        console.log('je click sur le boutton pour rejoindre le channel : ' , channelName)
         socket && socket.emit(events.channel.join, channelName);
         if(selectedChannel !== channelName){
             setMessages([]);
