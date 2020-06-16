@@ -12,11 +12,18 @@ const port = parseInt(process.env.PORT) || 3000;
 const dev = process.env.NODE_ENV !== "production";
 const nextApp = next({ dev });
 const nextHandler = nextApp.getRequestHandler();
-const regex = /\/(msg|nick|delete|create|list|part|join) (\w*) ?(.*)/gm;
 
 const messages = [];
 let users = [];
 const channels = [];
+
+function createNewChannel(data, user) {
+    //messages.push(data);
+    console.log(data, user);
+    channel = {name: data.value, id: data.id, user};
+    channels.push(channel);
+    io.emit(events.channel.new, channel);
+}
 
 io.on("connection", socket => {
     let user = null;
@@ -44,6 +51,7 @@ io.on("connection", socket => {
 
     // MESSAGE
     socket.on(events.message.new, (data, room) => {
+        const regex = /\/(msg|nick|delete|create|part|join) (\w*) ?(.*)/gm;
         const parseMessage = regex.exec(data.chat);
         let commandName = null;
         let commandMessage = null;
@@ -60,21 +68,25 @@ io.on("connection", socket => {
             socket.emit(events.user.nickname, {user, oldNickname: tmpUsername, me: true});
             socket.broadcast.emit(events.user.nickname, {user, oldNickname: tmpUsername, me: false});
         }
-
-        io.in(room).emit(events.message.new, {
-            nickname: user.nickname,
-            chat: data.chat,
-            id: uniqid(),
-            room: room
-        });
+        else if(commandName === 'create'){
+            createNewChannel({
+                value: commandMessage,
+                id: uniqid()
+            }, user)
+        } else {
+            io.in(room).emit(events.message.new, {
+                nickname: user.nickname,
+                chat: data.chat,
+                id: uniqid(),
+                room: room
+            });
+        }
     })
+
     // CHANNEL CREATE
     socket.on(events.channel.new, data => {
         //messages.push(data);
-        channel = { name: data.value, id: data.id, user };
-        console.log(data.value);
-        channels.push(channel);
-        io.emit(events.channel.new, channel);
+       createNewChannel(data, user);
     });
 
     // CHANNEL JOIN
