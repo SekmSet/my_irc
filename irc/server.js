@@ -53,11 +53,12 @@ io.on("connection", socket => {
         const parseMessage = regex.exec(data.chat);
         let commandName = null;
         let commandMessage = null;
-        let commandDelete = null;
+        let option = null;
 
-        if (parseMessage) {
-            commandName = parseMessage[1];
-            commandMessage = parseMessage[2];
+        if(parseMessage){
+             commandName = parseMessage[1];
+             commandMessage = parseMessage[2];
+             option = parseMessage[3];
         }
 
         if (commandName === 'nick') {
@@ -74,8 +75,10 @@ io.on("connection", socket => {
             }, user)
         } else if (commandName === 'join') {
             socket.join(commandMessage);
-            io.in(commandMessage).emit(events.channel.join, { name: commandMessage, user });
-        } else {
+            io.in(commandMessage).emit(events.channel.join, {name: commandMessage, user});
+        } else if(commandName === 'msg'){
+            console.log('msg command')
+        }else {
             io.in(room).emit(events.message.new, {
                 nickname: user.nickname,
                 chat: data.chat,
@@ -102,7 +105,7 @@ io.on("connection", socket => {
         socket.leave(data);
     });
 
-    //DELETE CHANNEL 
+    //DELETE CHANNEL
     socket.on(events.channel.delete, data => {
         channels = channels.filter(chan => chan.id != data.id);
         console.log(data, channels, channel)
