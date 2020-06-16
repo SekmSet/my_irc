@@ -15,7 +15,7 @@ const nextHandler = nextApp.getRequestHandler();
 
 const messages = [];
 let users = [];
-const channels = [];
+let channels = [];
 
 function createNewChannel(data, user) {
     channel = {name: data.value, id: data.id, user};
@@ -42,7 +42,7 @@ io.on("connection", socket => {
         user = { nickname: data.value, id: data.id };
         users.push(user);
         // pour moi tu envois tous les users
-        socket.emit(events.user.new, {users, channels});
+        socket.emit(events.user.new, { users, channels });
         // pour les autres tu envois le nouvel user
         socket.broadcast.emit(events.user.new, user);
     });
@@ -101,11 +101,18 @@ io.on("connection", socket => {
         socket.leave(data);
     });
 
+    //DELETE CHANNEL 
+    socket.on(events.channel.delete, data => {
+        channels = channels.filter(chan => chan.id != data.id);
+        console.log(data, channels, channel)
+        io.emit(events.channel.delete, channels);
+    })
+
     // DISCONNECT
     socket.on('disconnect', function () {
         if (user) {
             socket.broadcast.emit(events.user.disconnect, user);
-            users = users.filter(usr => usr.id !== user.id );
+            users = users.filter(usr => usr.id !== user.id);
         }
     });
 });
