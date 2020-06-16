@@ -2,26 +2,8 @@ import { useEffect, useState } from "react";
 import uniqid from 'uniqid';
 import useSocket from "../hooks/useSocket";
 const events = require("../event.json");
+
 const defaultChannelName = 'default';
-
-// [
-//     {
-//         "message": '',
-//         "nickname": '',
-//         "id": '',
-//     }
-// ]
-
-//     {
-//         chan1: [
-//             {
-//                 "message": '',
-//                 "nickname": '',
-//                 "id": '',
-//             }
-//         ],
-//     }
-
 let selectedChannel = defaultChannelName;
 
 export default function Tchat() {
@@ -57,6 +39,19 @@ export default function Tchat() {
                 setMessages(ms => [...ms, { nickname: message.nickname, chat: "s'est déconnecte", id: uniqid() }])
             });
 
+            socket.on(events.user.nickname, userNickname => {
+                if (userNickname.me) {
+                    setNickname(userNickname.user.nickname);
+                }
+
+                setUsers(us => us.map((u) => {
+                    if(u.nickname !== userNickname.oldNickname){
+                        u.nickname = userNickname.user.nickname;
+                    }
+                    return u;
+                }));
+            })
+
             // CHANNEL
             socket.on(events.channel.new, message => {
                 setChannels(channelNew => [...channelNew, message]);
@@ -73,12 +68,15 @@ export default function Tchat() {
             });
 
             // CHANNEL JOIN
-
+            socket.on(events.channel.join, message => {
+                if(selectedChannel !== message.name){
+                    setMessages([]);
+                }
+                selectedChannel = message.name;
+                setMessages(ms => [...ms, { nickname: message.user.nickname, chat: ` a rejoint ce channel ${message.name}`, id: uniqid() }]);
+            });
             // CHANNEL LEAVE
-            // socket.on(events.channel.join, message => {
-            //     setChannels(channelNew => [...channelNew, message]);
-            //     setMessages(ms => [...ms, { nickname: message.user.nickname, chat: ` a rejoint ce channel ${message.name}`, id: uniqid() }]);
-            // });
+
 
         }
     }, [socket]);
@@ -115,7 +113,6 @@ export default function Tchat() {
     }
 
     function joinChannel(channelName){
-        console.log('je click sur le boutton pour rejoindre le channel : ' , channelName)
         socket && socket.emit(events.channel.join, channelName);
         if(selectedChannel !== channelName){
             setMessages([]);
@@ -186,7 +183,7 @@ export default function Tchat() {
                         </div>
                     </div>
                     <div id="user">
-                        Membres
+                        Membres {nickname}
                         <hr/>
                         {users.map(usr => (
                             <p key={usr.id}>{usr.nickname}</p>
