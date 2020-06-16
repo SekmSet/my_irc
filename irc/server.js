@@ -18,7 +18,7 @@ let users = [];
 let channels = [];
 
 function createNewChannel(data, user) {
-    channel = {name: data.value, id: data.id, user};
+    channel = { name: data.value, id: data.id, user };
     channels.push(channel);
     io.emit(events.channel.new, channel);
 }
@@ -53,27 +53,28 @@ io.on("connection", socket => {
         const parseMessage = regex.exec(data.chat);
         let commandName = null;
         let commandMessage = null;
+        let commandDelete = null;
 
-        if(parseMessage){
-             commandName = parseMessage[1];
-             commandMessage = parseMessage[2];
+        if (parseMessage) {
+            commandName = parseMessage[1];
+            commandMessage = parseMessage[2];
         }
 
-        if(commandName === 'nick'){
+        if (commandName === 'nick') {
             let tmpUsername = user.nickname
             user.nickname = commandMessage;
             data.chat = `${tmpUsername} a changé son username est s'appelle mainement ${user.nickname}`;
-            socket.emit(events.user.nickname, {user, oldNickname: tmpUsername, me: true});
-            socket.broadcast.emit(events.user.nickname, {user, oldNickname: tmpUsername, me: false});
+            socket.emit(events.user.nickname, { user, oldNickname: tmpUsername, me: true });
+            socket.broadcast.emit(events.user.nickname, { user, oldNickname: tmpUsername, me: false });
         }
-        else if(commandName === 'create'){
+        else if (commandName === 'create') {
             createNewChannel({
                 value: commandMessage,
                 id: uniqid()
             }, user)
-        } else if(commandName === 'join'){
+        } else if (commandName === 'join') {
             socket.join(commandMessage);
-            io.in(commandMessage).emit(events.channel.join, {name: commandMessage, user});
+            io.in(commandMessage).emit(events.channel.join, { name: commandMessage, user });
         } else {
             io.in(room).emit(events.message.new, {
                 nickname: user.nickname,
@@ -87,12 +88,12 @@ io.on("connection", socket => {
     // CHANNEL CREATE
     socket.on(events.channel.new, data => {
         //messages.push(data);
-       createNewChannel(data, user);
+        createNewChannel(data, user);
     });
 
     // CHANNEL JOIN
     socket.on(events.channel.join, data => {
-       socket.join(data);
+        socket.join(data);
     });
 
     // CHANNEL LEAVE
