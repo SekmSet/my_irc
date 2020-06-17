@@ -53,8 +53,6 @@ export default function Tchat() {
             })
 
             // CHANNEL
-
-
             socket.on(events.channel.new, message => {
                 setChannels(channelNew => [...channelNew, message]);
                 setMessages(ms => [...ms, { nickname: message.user.nickname, chat: ` a créé un nouveau channel ${message.name}`, id: uniqid() }]);
@@ -161,17 +159,12 @@ export default function Tchat() {
                         </form>
 
                         <ul>
-                            <li>
-                                <button className="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded" onClick={() => joinChannel(defaultChannelName)} key={defaultChannelName}>{defaultChannelName}</button>
-                            </li>
-
                             {channels.map(chan => (
                                 <li key={chan.id}>
                                     <button className="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded" onClick={() => joinChannel(chan.name)}>{chan.name}</button>
                                     <button className="bg-grey-500 hover:bg-grey-400 text-grey font-bold py-2 px-4 border-b-4 border-grey-700 hover:border-grey-500 rounded" onClick={() => deleteChannel(chan)} >🗑️</button>
                                 </li>
                             ))}
-
                         </ul>
                     </div>
 
