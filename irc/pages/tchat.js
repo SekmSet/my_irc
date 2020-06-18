@@ -73,11 +73,17 @@ export default function Tchat() {
                     setMessages([]);
                 }
                 selectedChannel = message.name;
+                console.log(selectedChannel)
                 setMessages(ms => [...ms, { nickname: message.user.nickname, chat: ` a rejoint ce channel ${message.name}`, id: uniqid() }]);
             });
-            // CHANNEL LEAVE
-
-
+            // CHANNEL DELETED
+            socket.on(events.channel.delete, message => {
+                if (selectedChannel === message.name) {
+                    selectedChannel = defaultChannelName;
+                    setMessages([]);
+                }
+                setChannels(cs => cs.filter(c => c.id !== message.id));
+            });
         }
     }, [socket]);
 
@@ -95,7 +101,6 @@ export default function Tchat() {
         socket && socket.emit(events.message.new, {
             chat
         }, selectedChannel)
-
         setChat('');
     }
 
@@ -122,7 +127,6 @@ export default function Tchat() {
 
     function deleteChannel(chan) {
         socket && socket.emit(events.channel.delete, chan);
-
     }
 
     return (
@@ -161,7 +165,7 @@ export default function Tchat() {
                         <ul>
                             {channels.map(chan => (
                                 <li key={chan.id}>
-                                    <button className="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded" onClick={() => joinChannel(chan.name)}>{chan.name}</button>
+                                    <button className={`bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded ${selectedChannel === chan.name ? 'selected': ''}`} onClick={() => joinChannel(chan.name)}>{chan.name}</button>
                                     <button className="bg-grey-500 hover:bg-grey-400 text-grey font-bold py-2 px-4 border-b-4 border-grey-700 hover:border-grey-500 rounded" onClick={() => deleteChannel(chan)} >🗑️</button>
                                 </li>
                             ))}
@@ -254,6 +258,9 @@ export default function Tchat() {
                       text-align: center;
                       border-left : solid 1px grey;
                   }
+                .selected {
+                    background-color: green;
+                }
             `}
             </style>
             <style jsx global>{`
