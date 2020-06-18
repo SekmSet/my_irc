@@ -55,7 +55,7 @@ io.on("connection", socket => {
 
     // MESSAGE
     socket.on(events.message.new, (data, room) => {
-        const regex = /\/(nick|delete|create|part|join|users) ?(\w*) ?(.*)/gm;
+        const regex = /\/(nick|delete|create|part|join|users|list) ?(\w*) ?(.*)/gm;
         const parseMessage = regex.exec(data.chat);
         let commandName = null;
         let commandMessage = null;
@@ -108,7 +108,27 @@ io.on("connection", socket => {
                     room: room
                 });
             }
-        }else {
+        } else if(commandName ==='list'){
+            let matchedChannel = null;
+
+            if(commandMessage){
+                console.log(commandMessage);
+                const regex = new RegExp(commandMessage);
+                matchedChannel = channels.filter(({name}) => name.match(regex)).map(({name}) => name);
+                console.log(matchedChannel)
+            } else {
+                console.log(commandMessage);
+                matchedChannel = channels.map(c => c.name);
+                console.log(matchedChannel)
+            }
+
+            socket.emit(events.message.new, {
+                nickname: 'List des channels ',
+                chat: matchedChannel.join(', '),
+                id: uniqid(),
+                room: room
+            });
+        } else {
             io.in(room).emit(events.message.new, {
                 nickname: user.nickname,
                 chat: data.chat,
