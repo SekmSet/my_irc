@@ -55,7 +55,7 @@ io.on("connection", socket => {
 
     // MESSAGE
     socket.on(events.message.new, (data, room) => {
-        const regex = /\/(nick|delete|create|part|join) (\w*) ?(.*)/gm;
+        const regex = /\/(nick|delete|create|part|join|users) ?(\w*) ?(.*)/gm;
         const parseMessage = regex.exec(data.chat);
         let commandName = null;
         let commandMessage = null;
@@ -92,12 +92,23 @@ io.on("connection", socket => {
                 socket.emit(events.channel.join, {name: defaultChannel, user});
             }
         } else if (commandName === 'delete'){
-            const chan = channels.find(e => e.name === commandMessage);
+            const chan = channels.find(e => e.name === commandName);
             if (chan) {
                 channels = channels.filter(chan => chan.name !== commandMessage);
                 io.emit(events.channel.delete, {channelDelete : commandMessage, id: chan.id});
             }
-        } else {
+        } else if(commandName ==='users'){
+            const chan = channels.find(e => e.name === room);
+            if(chan){
+                const us = chan.list.map(u => u.nickname).join(', ');
+                socket.emit(events.message.new, {
+                    nickname: 'List des membres ',
+                    chat: us,
+                    id: uniqid(),
+                    room: room
+                });
+            }
+        }else {
             io.in(room).emit(events.message.new, {
                 nickname: user.nickname,
                 chat: data.chat,
