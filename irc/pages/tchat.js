@@ -64,7 +64,7 @@ export default function Tchat() {
                 if (selectedChannel !== message.room) {
                     return;
                 }
-                setMessages(ms => [...ms, { nickname: message.nickname, chat: message.chat, id: message.id }])
+                setMessages(ms => [...ms, { nickname: message.nickname, chat: message.chat, id: message.id, isPrivate: message.isPrivate }])
             });
 
             // CHANNEL JOIN
@@ -176,7 +176,7 @@ export default function Tchat() {
                         Le channel actuel
                         <hr />
                         {messages.map(message => (
-                            <p key={message.id}>{message.nickname}: {message.chat}</p>
+                            <p key={message.id} className={message.isPrivate ? 'private': ''}>{message.nickname}: {message.chat}</p>
                         ))}
                         <div className="form-message">
                             <form className="form-message" onSubmit={submitchat}>
@@ -260,6 +260,9 @@ export default function Tchat() {
                   }
                 .selected {
                     background-color: green;
+                }
+                .private {
+                    background-color: yellow
                 }
             `}
             </style>
