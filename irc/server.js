@@ -44,7 +44,7 @@ io.on("connection", socket => {
     // USER
     socket.on(events.user.new, data => {
         socket.join(channel)
-        user = { nickname: data.value, id: data.id };
+        user = { nickname: data.value, id: data.id, socket: socket.id };
         users.push(user);
         channels.find(e => e.name === defaultChannel).list.push(user);
         // pour moi tu envois tous les users
@@ -55,14 +55,16 @@ io.on("connection", socket => {
 
     // MESSAGE
     socket.on(events.message.new, (data, room) => {
-        const regex = /\/(nick|delete|create|part|join|users|list) ?(\w*) ?(.*)/gm;
+        const regex = /\/(nick|delete|create|part|join|users|list|msg) ?(\w*) ?(.*)/gm;
         const parseMessage = regex.exec(data.chat);
         let commandName = null;
         let commandMessage = null;
+        let option = null;
 
         if(parseMessage){
              commandName = parseMessage[1];
              commandMessage = parseMessage[2];
+             option = parseMessage[3];
         }
 
         if (commandName === 'nick') {
@@ -128,7 +130,22 @@ io.on("connection", socket => {
                 id: uniqid(),
                 room: room
             });
-        } else {
+        } else if(commandName === 'msg'){
+            if(commandMessage && option){
+                console.log(commandMessage, ' - ', option);
+                const u = users.find(({nickname}) => nickname === commandMessage);
+                console.log(u)
+                if (u) {
+                    socket.broadcast.to(u.socket).emit(events.message.new, {
+                        nickname: user.nickname,
+                        chat: option,
+                        id: uniqid(),
+                        room: room,
+                        isPrivate: true
+                    });
+                }
+            }
+        }else {
             io.in(room).emit(events.message.new, {
                 nickname: user.nickname,
                 chat: data.chat,
