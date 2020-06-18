@@ -43,7 +43,6 @@ io.on("connection", socket => {
 
     // USER
     socket.on(events.user.new, data => {
-        // console.log(data, channels);
         socket.join(channel)
         user = { nickname: data.value, id: data.id };
         users.push(user);
@@ -79,11 +78,26 @@ io.on("connection", socket => {
                 id: uniqid()
             }, user)
         } else if (commandName === 'join') {
-            socket.join(commandMessage);
-            io.in(commandMessage).emit(events.channel.join, {name: commandMessage, user});
+            const chan = channels.find(e => e.name === commandMessage);
+            if (chan){
+                socket.join(commandMessage);
+                chan.list.push(user);
+                io.in(commandMessage).emit(events.channel.join, {name: commandMessage, user});
+            }
         } else if(commandName === 'part'){
-            console.log(channels);
-        }else {
+            const chan = channels.find(e => e.name === commandMessage)
+            if (chan) {
+                chan.list.filter((u) => u.nickname !== user.nickname);
+                socket.join(defaultChannel);
+                socket.emit(events.channel.join, {name: defaultChannel, user});
+            }
+        } else if (commandName === 'delete'){
+            const chan = channels.find(e => e.name === commandMessage);
+            if (chan) {
+                channels = channels.filter(chan => chan.name !== commandMessage);
+                io.emit(events.channel.delete, {channelDelete : commandMessage, id: chan.id});
+            }
+        } else {
             io.in(room).emit(events.message.new, {
                 nickname: user.nickname,
                 chat: data.chat,
@@ -100,23 +114,17 @@ io.on("connection", socket => {
 
     // CHANNEL JOIN
     socket.on(events.channel.join, data => {
-        socket.join(data);
-        channels.find(e => e.name === data).list.push(user);
-    });
-
-    // CHANNEL LEAVE
-    socket.on(events.channel.part, data => {
-        console.log('leave a channel', data);
-        socket.leave(data);
-        // remove from channels.list
-
+        const chan = channels.find(e => e.name === data);
+        if (chan) {
+            socket.join(data);
+            chan.list.push(user);
+        }
     });
 
     //DELETE CHANNEL
     socket.on(events.channel.delete, data => {
-        channels = channels.filter(chan => chan.id != data.id);
-        console.log(data, channels, channel)
-        io.emit(events.channel.delete, channels);
+        channels = channels.filter(chan => chan.id !== data.id);
+        io.emit(events.channel.delete, data);
     })
 
     // DISCONNECT
