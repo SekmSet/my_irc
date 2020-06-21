@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import uniqid from 'uniqid';
+import Emoji from "react-emoji-render";
+
 import useSocket from "../hooks/useSocket";
 const events = require("../event.json");
 
@@ -202,7 +204,9 @@ export default function Index() {
                             </div>
                             <div className="allmsg" ref={elementRef}>
                                 {messages.map(message => (
-                                    <p key={message.id} className={message.isPrivate ? 'private' : ''}>{message.nickname}: {message.chat}</p>
+                                    <p key={message.id} className={message.isPrivate ? 'private' : ''}>
+                                        <Emoji text={`${message.nickname}: ${message.chat}`} />
+                                    </p>
                                 ))}
                             </div>
                         </div>
