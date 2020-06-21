@@ -15,7 +15,8 @@
         "new" : "channel.new",
         "delete" : "channel.delete",
         "join" : "channel.join",
-        "part" : "channel.part"
+        "part" : "channel.part",
+        "rename": "channel.rename"
     }
 }
 

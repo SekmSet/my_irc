@@ -1,209 +1,289 @@
-import Head from 'next/head'
+import { useEffect, useState } from "react";
+import uniqid from 'uniqid';
+import useSocket from "../hooks/useSocket";
+const events = require("../event.json");
 
-export default function Home() {
-  return (
-    <div className="container">
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+const defaultChannelName = 'default';
+let selectedChannel = defaultChannelName;
 
-      <main>
-        <h1 className="title">
-          Welcome to <a href="https://nextjs.org">Next2.js!</a>
-        </h1>
+export default function Index() {
+    const [messages, setMessages] = useState([]);
+    const [chat, setChat] = useState('');
+    const [users, setUsers] = useState([]);
+    const [channels, setChannels] = useState([]);
+    const [nickname, setNickname] = useState('');
+    const [channel, setChannel] = useState('');
+    const [showForm, setShowForm] = useState(true);
+    const socket = useSocket();
 
-        <p className="description">
-          Get started by editing <code>pages/index.js</code>
-        </p>
+    useEffect(() => {
+        if (socket) {
+            // USER
+            socket.on(events.user.new, message => {
+                // si message = array alors définir la liste d'user
+                if (message.users && message.channels) {
+                    setUsers(message.users);
+                    setChannels(message.channels);
+                } else {
+                    // si message = object ajouter l'utilisateur
+                    setUsers(userNew => [...userNew, message]);
+                    setMessages(ms => [...ms, { nickname: message.nickname, chat: "s'est connecte", id: uniqid() }]);
+                }
+            });
 
-        <div className="grid">
-          <a href="https://nextjs.org/docs" className="card">
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
+            socket.on(events.user.disconnect, message => {
+                // setUsers(function(us) {
+                //     return us.filter(usr => usr.id !== message.id );
+                // });
+                setUsers(us => us.filter(usr => usr.id !== message.id));
+                setMessages(ms => [...ms, { nickname: message.nickname, chat: "s'est déconnecte", id: uniqid() }])
+            });
 
-          <a href="https://nextjs.org/learn" className="card">
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
+            socket.on(events.user.nickname, userNickname => {
+                if (userNickname.me) {
+                    setNickname(userNickname.user.nickname);
+                }
 
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className="card"
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
+                setUsers(us => us.map((u) => {
+                    if (u.nickname !== userNickname.oldNickname) {
+                        u.nickname = userNickname.user.nickname;
+                    }
+                    return u;
+                }));
+            })
 
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className="card"
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
+            // CHANNEL
+            socket.on(events.channel.new, message => {
+                setChannels(channelNew => [...channelNew, message]);
+                setMessages(ms => [...ms, { nickname: message.user.nickname, chat: ` a créé un nouveau channel ${message.name}`, id: uniqid() }]);
+            });
 
-      <footer>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className="logo" />
-        </a>
-      </footer>
+            // MESSAGE
+            socket.on(events.message.new, message => {
+                //setMessages(ms => [...ms, message])
+                if (selectedChannel !== message.room) {
+                    return;
+                }
+                setMessages(ms => [...ms, { nickname: message.nickname, chat: message.chat, id: message.id, isPrivate: message.isPrivate }])
+            });
 
-      <style jsx>{`
-        .container {
-          min-height: 100vh;
-          padding: 0 0.5rem;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
+            // CHANNEL JOIN
+            socket.on(events.channel.join, message => {
+                if (selectedChannel !== message.name) {
+                    setMessages([]);
+                }
+                selectedChannel = message.name;
+                console.log(selectedChannel)
+                setMessages(ms => [...ms, { nickname: message.user.nickname, chat: ` a rejoint ce channel ${message.name}`, id: uniqid() }]);
+            });
+            // CHANNEL DELETED
+            socket.on(events.channel.delete, message => {
+                if (selectedChannel === message.name) {
+                    selectedChannel = defaultChannelName;
+                    setMessages([]);
+                }
+                setChannels(cs => cs.filter(c => c.id !== message.id));
+            });
+            // CHANNEL RENAMED
+            socket.on(events.channel.rename, messages => {
+                setChannels(messages.channels);
+                if (messages.oldChanName === selectedChannel) {
+                    selectedChannel = messages.newChanName
+                    setMessages(ms => [...ms, { nickname: messages.nickname, chat: `Le chan a été renommé en ${messages.newChanName}`, id: uniqid() }]);
+
+                    socket.emit(events.channel.rename, messages.newChanName);
+                }
+            });
         }
+    }, [socket]);
 
-        main {
-          padding: 5rem 0;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
+    function submit(e) {
+        e.preventDefault();
+        socket && socket.emit(events.user.new, {
+            id: new Date().getTime(),
+            value: nickname
+        });
+        setShowForm(false);
+    }
+
+    function submitchat(e) {
+        e.preventDefault();
+        socket && socket.emit(events.message.new, {
+            chat
+        }, selectedChannel)
+        setChat('');
+    }
+
+    function newChannel(e) {
+        e.preventDefault();
+        if (channel !== '') {
+            socket && socket.emit(events.channel.new, {
+                id: new Date().getTime(),
+                value: channel
+            });
+            setChannel('');
+        } else {
+            console.log('Name channel is undefined');
         }
+    }
 
-        footer {
-          width: 100%;
-          height: 100px;
-          border-top: 1px solid #eaeaea;
-          display: flex;
-          justify-content: center;
-          align-items: center;
+    function joinChannel(channelName) {
+        socket && socket.emit(events.channel.join, channelName);
+        if (selectedChannel !== channelName) {
+            setMessages([]);
         }
+        selectedChannel = channelName;
+    }
 
-        footer img {
-          margin-left: 0.5rem;
-        }
+    function deleteChannel(chan) {
+        socket && socket.emit(events.channel.delete, chan);
+    }
 
-        footer a {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-        }
+    return (
+        <div>
+            {showForm === true && (
+                <div>
+                    <div className="flex-container-acceuil">
+                        <label>Choose your new pseudo </label>
+                    </div>
+                    <hr className="hr" />
 
-        a {
-          color: inherit;
-          text-decoration: none;
-        }
+                    <form onSubmit={submit}>
+                        <input
+                            className="field"
+                            value={nickname}
+                            onChange={e => setNickname(e.target.value)}
+                        />
+                        <button className="button">submit</button>
+                    </form>
+                </div>
 
-        .title a {
-          color: #0070f3;
-          text-decoration: none;
-        }
+            )}
+            {showForm === false && (
+                <div className="flex-container">
+                    <div id="channels">
+                        Channels
+                        <hr />
+                        <form onSubmit={newChannel}>
+                            <input
+                                value={channel}
+                                onChange={e => setChannel(e.target.value)}
+                            />
+                            <button id="button">submit</button>
+                        </form>
 
-        .title a:hover,
-        .title a:focus,
-        .title a:active {
-          text-decoration: underline;
-        }
+                        <ul>
+                            {channels.map(chan => (
+                                <li key={chan.id}>
+                                    <button className={`bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded ${selectedChannel === chan.name ? 'selected': ''}`} onClick={() => joinChannel(chan.name)}>{chan.name}</button>
+                                    <button className="bg-grey-500 hover:bg-grey-400 text-grey font-bold py-2 px-4 border-b-4 border-grey-700 hover:border-grey-500 rounded" onClick={() => deleteChannel(chan)} >🗑️</button>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
 
-        .title {
-          margin: 0;
-          line-height: 1.15;
-          font-size: 4rem;
-        }
+                    <div id="message">
+                        Le channel actuel
+                        <hr />
+                        {messages.map(message => (
+                            <p key={message.id} className={message.isPrivate ? 'private': ''}>{message.nickname}: {message.chat}</p>
+                        ))}
+                        <div className="form-message">
+                            <form className="form-message" onSubmit={submitchat}>
+                                <input
+                                    value={chat}
+                                    onChange={e => setChat(e.target.value)}
+                                />
+                                <button id="button">submit</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div id="user">
+                        Membres {nickname}
+                        <hr />
+                        {users.map(usr => (
+                            <p key={usr.id}>{usr.nickname}</p>
+                        ))}
+                        <hr />
+                    </div>
+                </div>
+            )}
 
-        .title,
-        .description {
-          text-align: center;
-        }
+            <style jsx> {`
+             body {
+                margin: 0;
+                padding: 0;
+                font-size: 18px;
+                font-weight: 400;
+                line-height: 1.8;
+                color: #333;
+                font-family: sans-serif;
+            }
 
-        .description {
-          line-height: 1.5;
-          font-size: 1.5rem;
-        }
+            .button {
+                background-color: #393e46; 
+                border: none;
+                color: white;
+                padding: 15px 32px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-size: 16px;
+              }
+            .field {
 
-        code {
-          background: #fafafa;
-          border-radius: 5px;
-          padding: 0.75rem;
-          font-size: 1.1rem;
-          font-family: Menlo, Monaco, Lucida Console, Liberation Mono,
-            DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
-        }
-
-        .grid {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-wrap: wrap;
-
-          max-width: 800px;
-          margin-top: 3rem;
-        }
-
-        .card {
-          margin: 1rem;
-          flex-basis: 45%;
-          padding: 1.5rem;
-          text-align: left;
-          color: inherit;
-          text-decoration: none;
-          border: 1px solid #eaeaea;
-          border-radius: 10px;
-          transition: color 0.15s ease, border-color 0.15s ease;
-        }
-
-        .card:hover,
-        .card:focus,
-        .card:active {
-          color: #0070f3;
-          border-color: #0070f3;
-        }
-
-        .card h3 {
-          margin: 0 0 1rem 0;
-          font-size: 1.5rem;
-        }
-
-        .card p {
-          margin: 0;
-          font-size: 1.25rem;
-          line-height: 1.5;
-        }
-
-        .logo {
-          height: 1em;
-        }
-
-        @media (max-width: 600px) {
-          .grid {
-            width: 100%;
-            flex-direction: column;
-          }
-        }
-      `}</style>
-
-      <style jsx global>{`
-        html,
-        body {
-          padding: 0;
-          margin: 0;
-          font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
-            Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue,
-            sans-serif;
-        }
-
-        * {
-          box-sizing: border-box;
-        }
-      `}</style>
-    </div>
-  )
+                margin-top: 1%;
+                margin-left: 42%;
+                width: 15%;
+                height: 56px;
+                border-radius: 4px;
+                position: relative;
+                background-color: #eeeeee;
+                transition: 0.3s all;
+            }
+            .field:hover {
+                background-color: rgba(255, 255, 255, 0.45);
+                box-shadow: 0px 4px 20px 0px rgba(0, 0, 0, 0.05);
+            }
+            .flex-container-acceuil{
+                    display: flex;
+                    font-size: 130px;
+                    justify-content: space-around;
+                    margin-top: 10%;
+                }
+                .hr {
+                    width: 13%;
+                    margin: auto;
+                    padding-bottom: 0.3%;
+                    background-color: black;
+                }
+                
+                .flex-container {
+                        display: flex;
+                        justify-content: space-around;
+                }
+                .flex-container > div {
+                      width: 100%;
+                      margin: 10px 0 0 0;
+                      text-align: center;
+                      border-left : solid 1px grey;
+                  }
+                .selected {
+                    background-color: green;
+                }
+                .private {
+                    background-color: yellow
+                }
+            `}
+            </style>
+            <style jsx global>{`
+                * {
+                  padding: 0;
+                  margin: 0;
+                  box-sizing: border-box;
+                }
+            `}</style>
+        </div >
+    );
 }
+
