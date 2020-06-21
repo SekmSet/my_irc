@@ -29,7 +29,7 @@ export default function Index() {
                 } else {
                     // si message = object ajouter l'utilisateur
                     setUsers(userNew => [...userNew, message]);
-                    setMessages(ms => [...ms, { nickname: message.nickname, chat: "s'est connecte", id: uniqid() }]);
+                    setMessages(ms => [...ms, { nickname: message.nickname, chat: "is now connected", id: uniqid() }]);
                 }
             });
 
@@ -38,7 +38,7 @@ export default function Index() {
                 //     return us.filter(usr => usr.id !== message.id );
                 // });
                 setUsers(us => us.filter(usr => usr.id !== message.id));
-                setMessages(ms => [...ms, { nickname: message.nickname, chat: "s'est déconnecte", id: uniqid() }])
+                setMessages(ms => [...ms, { nickname: message.nickname, chat: "is disconnected", id: uniqid() }])
             });
 
             socket.on(events.user.nickname, userNickname => {
@@ -57,7 +57,7 @@ export default function Index() {
             // CHANNEL
             socket.on(events.channel.new, message => {
                 setChannels(channelNew => [...channelNew, message]);
-                setMessages(ms => [...ms, { nickname: message.user.nickname, chat: ` a créé un nouveau channel ${message.name}`, id: uniqid() }]);
+                setMessages(ms => [...ms, { nickname: message.user.nickname, chat: ` create a new channel ${message.name}`, id: uniqid() }]);
             });
 
             // MESSAGE
@@ -76,7 +76,7 @@ export default function Index() {
                 }
                 selectedChannel = message.name;
                 console.log(selectedChannel)
-                setMessages(ms => [...ms, { nickname: message.user.nickname, chat: ` a rejoint ce channel ${message.name}`, id: uniqid() }]);
+                setMessages(ms => [...ms, { nickname: message.user.nickname, chat: `joined this channel ${message.name}`, id: uniqid() }]);
             });
             // CHANNEL DELETED
             socket.on(events.channel.delete, message => {
@@ -91,7 +91,8 @@ export default function Index() {
                 setChannels(messages.channels);
                 if (messages.oldChanName === selectedChannel) {
                     selectedChannel = messages.newChanName
-                    setMessages(ms => [...ms, { nickname: messages.nickname, chat: `Le chan a été renommé en ${messages.newChanName}`, id: uniqid() }]);
+                    setMessages(ms => [...ms, { nickname: messages.nickname, chat: `
+                    the channel has been renamed in ${messages.newChanName}`, id: uniqid() }]);
 
                     socket.emit(events.channel.rename, messages.newChanName);
                 }
@@ -244,7 +245,6 @@ export default function Index() {
                 height: 80vh;
                 overflow-y: scroll;
             }
-            
             .chat-page{
                 padding 0 0 50px 0;
             }

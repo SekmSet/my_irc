@@ -18,7 +18,7 @@ let channels = [{
     name: defaultChannel,
     id: uniqid(),
     user: {},
-    list:[],
+    list: [],
     create_at: moment(),
     last_message: moment(),
 }];
@@ -26,15 +26,15 @@ let channels = [{
 const chanMustBeDeletedAfter = 1; // in minute
 
 function createNewChannel(data, user) {
-    channel = { name: data.value, id: data.id, user, list: [], create_at: moment(), last_message: moment()};
+    channel = { name: data.value, id: data.id, user, list: [], create_at: moment(), last_message: moment() };
     channels.push(channel);
     io.emit(events.channel.new, channel);
 }
 
-setInterval(()=>{
+setInterval(() => {
     const timeRef = moment().subtract(chanMustBeDeletedAfter, 'minutes');
-    channels.forEach((chan, key)=>{
-        if(timeRef > chan.last_message && chan.name !== defaultChannel){
+    channels.forEach((chan, key) => {
+        if (timeRef > chan.last_message && chan.name !== defaultChannel) {
             channels = channels.filter(c => c.id !== chan.id);
             io.emit(events.channel.delete, chan);
             console.log(`${chan.name} deleted`);
@@ -74,16 +74,16 @@ io.on("connection", socket => {
         let commandMessage = null;
         let option = null;
 
-        if(parseMessage){
-             commandName = parseMessage[1];
-             commandMessage = parseMessage[2];
-             option = parseMessage[3];
+        if (parseMessage) {
+            commandName = parseMessage[1];
+            commandMessage = parseMessage[2];
+            option = parseMessage[3];
         }
 
         if (commandName === 'nick') {
             let tmpUsername = user.nickname
             user.nickname = commandMessage;
-            data.chat = `${tmpUsername} a changé son username est s'appelle mainement ${user.nickname}`;
+            data.chat = `${tmpUsername} change his name, his new name is : ${user.nickname}`;
             socket.emit(events.user.nickname, { user, oldNickname: tmpUsername, me: true });
             socket.broadcast.emit(events.user.nickname, { user, oldNickname: tmpUsername, me: false });
         }
@@ -94,42 +94,42 @@ io.on("connection", socket => {
             }, user)
         } else if (commandName === 'join') {
             const chan = channels.find(e => e.name === commandMessage);
-            if (chan){
+            if (chan) {
                 socket.join(commandMessage);
                 chan.list.push(user);
-                io.in(commandMessage).emit(events.channel.join, {name: commandMessage, user});
+                io.in(commandMessage).emit(events.channel.join, { name: commandMessage, user });
             }
-        } else if(commandName === 'part'){
+        } else if (commandName === 'part') {
             const chan = channels.find(e => e.name === commandMessage)
             if (chan) {
                 chan.list.filter((u) => u.nickname !== user.nickname);
                 socket.join(defaultChannel);
-                socket.emit(events.channel.join, {name: defaultChannel, user});
+                socket.emit(events.channel.join, { name: defaultChannel, user });
             }
-        } else if (commandName === 'delete'){
+        } else if (commandName === 'delete') {
             const chan = channels.find(e => e.name === commandName);
             if (chan) {
                 channels = channels.filter(chan => chan.name !== commandMessage);
-                io.emit(events.channel.delete, {channelDelete : commandMessage, id: chan.id});
+                io.emit(events.channel.delete, { channelDelete: commandMessage, id: chan.id });
             }
-        } else if(commandName ==='users'){
+        } else if (commandName === 'users') {
             const chan = channels.find(e => e.name === room);
-            if(chan){
+            if (chan) {
                 const us = chan.list.map(u => u.nickname).join(', ');
                 socket.emit(events.message.new, {
-                    nickname: 'List des membres ',
+                    nickname: 'List of membres ',
                     chat: us,
                     id: uniqid(),
                     room: room
                 });
             }
-        } else if(commandName ==='list'){
+        } else if (commandName === 'list') {
             let matchedChannel = null;
 
-            if(commandMessage){
+            if (commandMessage) {
                 console.log(commandMessage);
                 const regex = new RegExp(commandMessage);
-                matchedChannel = channels.filter(({name}) => name.match(regex)).map(({name}) => name);
+                matchedChannel = channels.filter(({ name }) => name.match(regex)).map(({ name }) => name);
                 console.log(matchedChannel)
             } else {
                 console.log(commandMessage);
@@ -138,15 +138,15 @@ io.on("connection", socket => {
             }
 
             socket.emit(events.message.new, {
-                nickname: 'List des channels ',
+                nickname: 'List of channels ',
                 chat: matchedChannel.join(', '),
                 id: uniqid(),
                 room: room
             });
-        } else if(commandName === 'msg'){
-            if(commandMessage && option){
+        } else if (commandName === 'msg') {
+            if (commandMessage && option) {
                 console.log(commandMessage, ' - ', option);
-                const u = users.find(({nickname}) => nickname === commandMessage);
+                const u = users.find(({ nickname }) => nickname === commandMessage);
                 console.log(u)
                 if (u) {
                     socket.broadcast.to(u.socket).emit(events.message.new, {
@@ -158,12 +158,12 @@ io.on("connection", socket => {
                     });
                 }
             }
-        } else if(commandName === 'rename') {
-            const currentChan = channels.find(({name}) => name === room);
+        } else if (commandName === 'rename') {
+            const currentChan = channels.find(({ name }) => name === room);
             if (currentChan.user.id !== user.id) {
                 socket.emit(events.message.new, {
                     nickname: user.nickname,
-                    chat: "Tu ne peux pas supprimer car tu n'es pas son créateur !",
+                    chat: "You cannot drop this because you are not admin!",
                     id: uniqid(),
                     room: room,
                     isPrivate: true
@@ -194,8 +194,8 @@ io.on("connection", socket => {
                 id: uniqid(),
                 room: room
             });
-            const c = channels.find(({name}) => name === room);
-            if(c){
+            const c = channels.find(({ name }) => name === room);
+            if (c) {
                 c.update_at = moment();
             }
         }
