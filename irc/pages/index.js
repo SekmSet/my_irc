@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import uniqid from 'uniqid';
 import useSocket from "../hooks/useSocket";
 const events = require("../event.json");
@@ -15,6 +15,8 @@ export default function Index() {
     const [channel, setChannel] = useState('');
     const [showForm, setShowForm] = useState(true);
     const socket = useSocket();
+
+    const elementRef = useRef();
 
     useEffect(() => {
         if (socket) {
@@ -139,15 +141,20 @@ export default function Index() {
         socket && socket.emit(events.channel.delete, chan);
     }
 
+    useEffect(() => {
+        if (elementRef.current) {
+            elementRef.current.scrollTop = elementRef.current.scrollHeight
+        }
+    }, [messages])
+
+
     return (
-        <div>
+        <div className="background-welcome">
             {showForm === true && (
                 <div>
                     <div className="flex-container-acceuil">
                         <label>Choose your new pseudo </label>
                     </div>
-                    <hr className="hr" />
-
                     <form onSubmit={submit}>
                         <input
                             className="field"
@@ -157,69 +164,129 @@ export default function Index() {
                         <button className="button">submit</button>
                     </form>
                 </div>
-
             )}
             {showForm === false && (
                 <div className="flex-container">
                     <div id="channels">
                         Channels
-                        <hr />
+                        
                         <form onSubmit={newChannel}>
                             <input
+                                placeholder="Create new channel"
+                                className="field-chan"
                                 value={channel}
                                 onChange={e => setChannel(e.target.value)}
                             />
-                            <button id="button">submit</button>
+                            <button className="button">submit</button>
                         </form>
 
                         <ul>
+                            
                             {channels.map(chan => (
                                 <li key={chan.id}>
-                                    <button className={`bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded ${selectedChannel === chan.name ? 'selected': ''}`} onClick={() => joinChannel(chan.name)}>{chan.name}</button>
-                                    <button className="bg-grey-500 hover:bg-grey-400 text-grey font-bold py-2 px-4 border-b-4 border-grey-700 hover:border-grey-500 rounded" onClick={() => deleteChannel(chan)} >🗑️</button>
+                                    <button className={`button ${selectedChannel === chan.name ? 'selected' : ''}`} onClick={() => joinChannel(chan.name)}>{chan.name}</button>
+                                    <button className="button" onClick={() => deleteChannel(chan)} >🗑️</button>
                                 </li>
                             ))}
                         </ul>
                     </div>
 
-                    <div id="message">
-                        Le channel actuel
-                        <hr />
-                        {messages.map(message => (
-                            <p key={message.id} className={message.isPrivate ? 'private': ''}>{message.nickname}: {message.chat}</p>
-                        ))}
-                        <div className="form-message">
-                            <form className="form-message" onSubmit={submitchat}>
-                                <input
-                                    value={chat}
-                                    onChange={e => setChat(e.target.value)}
-                                />
-                                <button id="button">submit</button>
-                            </form>
+                    <div className="container">
+                        <div className="msg-header">
+                            <div className="active">
+                                {users.map(usr => (
+                                <h4 key={usr.id}>{usr.nickname}</h4>
+                                ))}
+                                <h6>connected</h6>
+                            </div>
+                            <div className="allmsg" ref={elementRef}>
+                                {messages.map(message => (
+                                    <p key={message.id} className={message.isPrivate ? 'private' : ''}>{message.nickname}: {message.chat}</p>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="chat-page">
+                            <div className="msg-inbox">
+                                <div className="msg-page"> 
+                                    <form className="form-message" onSubmit={submitchat}>
+                                        <input
+                                            placeholder="Send message"
+                                            className="field-chan"
+                                            value={chat}
+                                            onChange={e => setChat(e.target.value)}
+                                        />
+                                        <button className="button">submit</button>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div id="user">
-                        Membres {nickname}
-                        <hr />
+                        Membres connected now
+
                         {users.map(usr => (
                             <p key={usr.id}>{usr.nickname}</p>
                         ))}
-                        <hr />
+
                     </div>
                 </div>
-            )}
+            )};
 
             <style jsx> {`
-             body {
-                margin: 0;
-                padding: 0;
+            body {
                 font-size: 18px;
                 font-weight: 400;
                 line-height: 1.8;
                 color: #333;
                 font-family: sans-serif;
             }
-
+            .allmsg {
+                height: 80vh;
+                overflow-y: scroll;
+            }
+            
+            .chat-page{
+                padding 0 0 50px 0;
+            }
+            .msg-inbox{
+                border: 1px solid #ccc;
+                overflow: hidden;
+                padding-bottom: 30px;
+            }
+            .active{
+                width: 120px;
+                float: left;
+                margin-top: 10px; 
+                position: absolute;
+            }
+            .active h4{
+                font-size: 20px;
+                margin-left: 10px;
+                color: #fff;
+            }
+            .active h6{
+                font-size: 10px;
+                margin-left: 10px;
+                line-height: 2px;
+                color: #fff;
+            }
+            .container{
+                max-width: 500 !important;
+                margin: auto;
+                margin-top: 4%;
+                letter-spacing: 0.5px;
+            }
+            .msg-header {
+                border: 1px solid #ccc;
+                width: 100%;
+                height: 100%;
+                border-bottom: none;
+                display: inline-block;
+                background-color: grey;
+                max-height: 90%;
+                
+                
+            }
             .button {
                 background-color: #393e46; 
                 border: none;
@@ -229,9 +296,13 @@ export default function Index() {
                 text-decoration: none;
                 display: inline-block;
                 font-size: 16px;
-              }
+                position: sticky;
+                width: 19%;
+            }
+            .button:hover{
+                background-color: rgba(200, 204, 200);
+            }
             .field {
-
                 margin-top: 1%;
                 margin-left: 42%;
                 width: 15%;
@@ -246,44 +317,43 @@ export default function Index() {
                 box-shadow: 0px 4px 20px 0px rgba(0, 0, 0, 0.05);
             }
             .flex-container-acceuil{
-                    display: flex;
-                    font-size: 130px;
-                    justify-content: space-around;
-                    margin-top: 10%;
+                padding-top: 13%;
+                color: #eeeeee;
+                display: flex;
+                font-size: 120px;
+                justify-content: space-around;
+            }
+            
+            .flex-container {
+                color: #eeeeee;
+                display: flex;
+                font-size: 100%;
+                justify-content: space-around;
+            }
+            .flex-container > div {
+                    width: 100%;
+                    margin: 10px 0 0 0;
+                    text-align: center;
                 }
-                .hr {
-                    width: 13%;
-                    margin: auto;
-                    padding-bottom: 0.3%;
-                    background-color: black;
-                }
-                
-                .flex-container {
-                        display: flex;
-                        justify-content: space-around;
-                }
-                .flex-container > div {
-                      width: 100%;
-                      margin: 10px 0 0 0;
-                      text-align: center;
-                      border-left : solid 1px grey;
-                  }
-                .selected {
-                    background-color: green;
-                }
-                .private {
-                    background-color: yellow
-                }
+
+            .field-chan{
+                margin-top: 1%;
+                margin-left: 0%;
+                width: 19%;
+                height: 52px;
+                border-radius: 4px;
+                position: relative;
+                background-color: black;
+                -webkit-transition: 0.3s all;
+                transition: 0.3s all;
+            }
+            .private {
+                background-color: yellow
+            }
             `}
             </style>
-            <style jsx global>{`
-                * {
-                  padding: 0;
-                  margin: 0;
-                  box-sizing: border-box;
-                }
-            `}</style>
-        </div >
+        </div>
     );
+    /* border-left : solid 1px grey; */
 }
 
