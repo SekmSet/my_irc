@@ -107,7 +107,7 @@ io.on("connection", socket => {
                 socket.emit(events.channel.join, { name: defaultChannel, user });
             }
         } else if (commandName === 'delete') {
-            const chan = channels.find(e => e.name === commandName);
+            const chan = channels.find(e => e.name === commandMessage);
             if (chan) {
                 channels = channels.filter(chan => chan.name !== commandMessage);
                 io.emit(events.channel.delete, { channelDelete: commandMessage, id: chan.id });

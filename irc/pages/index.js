@@ -80,7 +80,7 @@ export default function Index() {
             });
             // CHANNEL DELETED
             socket.on(events.channel.delete, message => {
-                if (selectedChannel === message.name) {
+                if (selectedChannel === message.channelDelete) {
                     selectedChannel = defaultChannelName;
                     setMessages([]);
                 }
@@ -349,6 +349,9 @@ export default function Index() {
             }
             .private {
                 background-color: yellow
+            }
+            .selected {
+                background-color: #718096
             }
             `}
             </style>
