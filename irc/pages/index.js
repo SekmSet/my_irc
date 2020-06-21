@@ -52,6 +52,8 @@ export default function Index() {
                     }
                     return u;
                 }));
+
+                setMessages(ms => [...ms, { nickname: userNickname.oldNickname, chat: ` renamed to ${userNickname.user.nickname}`, id: uniqid() }]);
             })
 
             // CHANNEL
@@ -75,7 +77,6 @@ export default function Index() {
                     setMessages([]);
                 }
                 selectedChannel = message.name;
-                console.log(selectedChannel)
                 setMessages(ms => [...ms, { nickname: message.user.nickname, chat: `joined this channel ${message.name}`, id: uniqid() }]);
             });
             // CHANNEL DELETED
@@ -85,6 +86,8 @@ export default function Index() {
                     setMessages([]);
                 }
                 setChannels(cs => cs.filter(c => c.id !== message.id));
+                setMessages(ms => [...ms, { nickname: message.user.nickname, chat: `deleted channel ${message.channelDelete}`, id: uniqid() }]);
+
             });
             // CHANNEL RENAMED
             socket.on(events.channel.rename, messages => {
@@ -195,10 +198,7 @@ export default function Index() {
                     <div className="container">
                         <div className="msg-header">
                             <div className="active">
-                                {users.map(usr => (
-                                <h4 key={usr.id}>{usr.nickname}</h4>
-                                ))}
-                                <h6>connected</h6>
+                                <h4>{nickname}</h4>
                             </div>
                             <div className="allmsg" ref={elementRef}>
                                 {messages.map(message => (

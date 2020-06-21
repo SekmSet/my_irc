@@ -23,7 +23,7 @@ let channels = [{
     last_message: moment(),
 }];
 
-const chanMustBeDeletedAfter = 1; // in minute
+const chanMustBeDeletedAfter = 5; // in minute
 
 function createNewChannel(data, user) {
     channel = { name: data.value, id: data.id, user, list: [], create_at: moment(), last_message: moment() };
@@ -36,7 +36,7 @@ setInterval(() => {
     channels.forEach((chan, key) => {
         if (timeRef > chan.last_message && chan.name !== defaultChannel) {
             channels = channels.filter(c => c.id !== chan.id);
-            io.emit(events.channel.delete, chan);
+            io.emit(events.channel.delete, { channelDelete: chan.name, id: chan.id, user: { nickname: 'server'} });
             console.log(`${chan.name} deleted`);
         }
     })
@@ -110,7 +110,7 @@ io.on("connection", socket => {
             const chan = channels.find(e => e.name === commandMessage);
             if (chan) {
                 channels = channels.filter(chan => chan.name !== commandMessage);
-                io.emit(events.channel.delete, { channelDelete: commandMessage, id: chan.id });
+                io.emit(events.channel.delete, { channelDelete: commandMessage, id: chan.id, user });
             }
         } else if (commandName === 'users') {
             const chan = channels.find(e => e.name === room);
