@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import uniqid from 'uniqid';
 import useSocket from "../hooks/useSocket";
 const events = require("../event.json");
@@ -15,6 +15,8 @@ export default function Index() {
     const [channel, setChannel] = useState('');
     const [showForm, setShowForm] = useState(true);
     const socket = useSocket();
+
+    const elementRef = useRef();
 
     useEffect(() => {
         if (socket) {
@@ -139,11 +141,12 @@ export default function Index() {
         socket && socket.emit(events.channel.delete, chan);
     }
 
-        .title a:hover,
-        .title a:focus,
-        .title a:active {
-          text-decoration: underline;
+    useEffect(() => {
+        if (elementRef.current) {
+            elementRef.current.scrollTop = elementRef.current.scrollHeight
         }
+    }, [messages])
+
 
     return (
         <div className="background-welcome">
@@ -152,8 +155,6 @@ export default function Index() {
                     <div className="flex-container-acceuil">
                         <label>Choose your new pseudo </label>
                     </div>
-                  
-
                     <form onSubmit={submit}>
                         <input
                             className="field"
@@ -192,44 +193,34 @@ export default function Index() {
 
                     <div className="container">
                         <div className="msg-header">
-                        <div className="active">
-                        {users.map(usr => (
-                        <h4 key={usr.id}>{usr.nickname}</h4>
-                        ))}
-                            <h6>connected</h6>
-                        </div>
-                        <div className="allmsg">
-                        
-                        {messages.map(message => (
-                            <p key={message.id} className={message.isPrivate ? 'private' : ''}>{message.nickname}: {message.chat}</p>
-                        ))}
-                        
-                        </div>
-                        
+                            <div className="active">
+                                {users.map(usr => (
+                                <h4 key={usr.id}>{usr.nickname}</h4>
+                                ))}
+                                <h6>connected</h6>
+                            </div>
+                            <div className="allmsg" ref={elementRef}>
+                                {messages.map(message => (
+                                    <p key={message.id} className={message.isPrivate ? 'private' : ''}>{message.nickname}: {message.chat}</p>
+                                ))}
+                            </div>
                         </div>
                         <div className="chat-page">
                             <div className="msg-inbox">
                                 <div className="msg-page"> 
-                                   
-                                                <form className="form-message" onSubmit={submitchat}>
-                                                    <input
-                                                        placeholder="Send message"
-                                                        className="field-chan"
-                                                        value={chat}
-                                                        onChange={e => setChat(e.target.value)}
-                                                    />
-                                                    <button className="button">submit</button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <form className="form-message" onSubmit={submitchat}>
+                                        <input
+                                            placeholder="Send message"
+                                            className="field-chan"
+                                            value={chat}
+                                            onChange={e => setChat(e.target.value)}
+                                        />
+                                        <button className="button">submit</button>
+                                    </form>
                                 </div>
-
-
-
-
-
-                                {/* ------------------------------ */}
+                            </div>
+                        </div>
+                    </div>
                     <div id="user">
                         Membres connected now
 
@@ -239,7 +230,7 @@ export default function Index() {
 
                     </div>
                 </div>
-            )}
+            )};
 
             <style jsx> {`
             body {
@@ -249,9 +240,9 @@ export default function Index() {
                 color: #333;
                 font-family: sans-serif;
             }
-            .allmsg scroll-container{
-                overflow: auto;
-                
+            .allmsg {
+                height: 80vh;
+                overflow-y: scroll;
             }
             
             .chat-page{
@@ -309,7 +300,7 @@ export default function Index() {
                 width: 19%;
             }
             .button:hover{
-                 background-color: rgba(200, 204, 200);
+                background-color: rgba(200, 204, 200);
             }
             .field {
                 margin-top: 1%;
@@ -326,40 +317,39 @@ export default function Index() {
                 box-shadow: 0px 4px 20px 0px rgba(0, 0, 0, 0.05);
             }
             .flex-container-acceuil{
-                    padding-top: 13%;
-                    color: #eeeeee;
-                    display: flex;
-                    font-size: 120px;
-                    justify-content: space-around;
+                padding-top: 13%;
+                color: #eeeeee;
+                display: flex;
+                font-size: 120px;
+                justify-content: space-around;
+            }
+            
+            .flex-container {
+                color: #eeeeee;
+                display: flex;
+                font-size: 100%;
+                justify-content: space-around;
+            }
+            .flex-container > div {
+                    width: 100%;
+                    margin: 10px 0 0 0;
+                    text-align: center;
                 }
-  
-                
-                .flex-container {
-                    color: #eeeeee;
-                    display: flex;
-                    font-size: 100%;
-                    justify-content: space-around;
-                }
-                .flex-container > div {
-                      width: 100%;
-                      margin: 10px 0 0 0;
-                      text-align: center;
-                  }
 
-                .field-chan{
-                    margin-top: 1%;
-                    margin-left: 0%;
-                    width: 19%;
-                    height: 52px;
-                    border-radius: 4px;
-                    position: relative;
-                    background-color: black;
-                    -webkit-transition: 0.3s all;
-                    transition: 0.3s all;
-                }
-                .private {
-                    background-color: yellow
-                }
+            .field-chan{
+                margin-top: 1%;
+                margin-left: 0%;
+                width: 19%;
+                height: 52px;
+                border-radius: 4px;
+                position: relative;
+                background-color: black;
+                -webkit-transition: 0.3s all;
+                transition: 0.3s all;
+            }
+            .private {
+                background-color: yellow
+            }
             `}
             </style>
         </div>
