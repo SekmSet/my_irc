@@ -2,8 +2,8 @@ const app = require("express")();
 const server = require("http").Server(app);
 const io = require("socket.io")(server);
 const next = require("next");
-const ent = require("ent");
-var uniqid = require('uniqid');
+const moment = require('moment'); // require
+const uniqid = require('uniqid');
 
 const events = require("./event.json");
 
@@ -11,23 +11,36 @@ const port = parseInt(process.env.PORT) || 3000;
 const dev = process.env.NODE_ENV !== "production";
 const nextApp = next({ dev });
 const nextHandler = nextApp.getRequestHandler();
-
 const defaultChannel = 'default';
 
-const messages = [];
 let users = [];
 let channels = [{
     name: defaultChannel,
     id: uniqid(),
     user: {},
-    list:[]
+    list:[],
+    create_at: moment(),
+    last_message: moment(),
 }];
 
+const chanMustBeDeletedAfter = 1; // in minute
+
 function createNewChannel(data, user) {
-    channel = { name: data.value, id: data.id, user, list: []};
+    channel = { name: data.value, id: data.id, user, list: [], create_at: moment(), last_message: moment()};
     channels.push(channel);
     io.emit(events.channel.new, channel);
 }
+
+setInterval(()=>{
+    const timeRef = moment().subtract(chanMustBeDeletedAfter, 'minutes');
+    channels.forEach((chan, key)=>{
+        if(timeRef > chan.last_message && chan.name !== defaultChannel){
+            channels = channels.filter(c => c.id !== chan.id);
+            io.emit(events.channel.delete, chan);
+            console.log(`${chan.name} deleted`);
+        }
+    })
+}, 1000)
 
 io.on("connection", socket => {
     let user = null;
@@ -55,7 +68,7 @@ io.on("connection", socket => {
 
     // MESSAGE
     socket.on(events.message.new, (data, room) => {
-        const regex = /\/(nick|delete|create|part|join|users|list|msg) ?(\w*) ?(.*)/gm;
+        const regex = /\/(nick|delete|create|part|join|users|list|msg|rename) ?(\w*) ?(.*)/gm;
         const parseMessage = regex.exec(data.chat);
         let commandName = null;
         let commandMessage = null;
@@ -145,13 +158,46 @@ io.on("connection", socket => {
                     });
                 }
             }
-        }else {
+        } else if(commandName === 'rename') {
+            const currentChan = channels.find(({name}) => name === room);
+            if (currentChan.user.id !== user.id) {
+                socket.emit(events.message.new, {
+                    nickname: user.nickname,
+                    chat: "Tu ne peux pas supprimer car tu n'es pas son créateur !",
+                    id: uniqid(),
+                    room: room,
+                    isPrivate: true
+                })
+                return;
+            }
+
+            channels = channels.map(c => {
+                if (currentChan.user.id === user.id && currentChan.id === c.id) {
+                    c.name = commandMessage
+                    c.last_message = moment()
+                }
+
+                return c;
+            });
+
+            io.emit(events.channel.rename, {
+                channels,
+                oldChanName: room,
+                newChanName: commandMessage,
+                nickname: user.nickname
+            })
+        }
+        else {
             io.in(room).emit(events.message.new, {
                 nickname: user.nickname,
                 chat: data.chat,
                 id: uniqid(),
                 room: room
             });
+            const c = channels.find(({name}) => name === room);
+            if(c){
+                c.update_at = moment();
+            }
         }
     })
 
@@ -169,10 +215,19 @@ io.on("connection", socket => {
         }
     });
 
+    // CHANNEL JOIN
+    socket.on(events.channel.rename, data => {
+        const chan = channels.find(e => e.name === data);
+        if (chan) {
+            socket.join(data);
+        }
+    });
+
     //DELETE CHANNEL
     socket.on(events.channel.delete, data => {
         channels = channels.filter(chan => chan.id !== data.id);
         io.emit(events.channel.delete, data);
+        console.log(data);
     })
 
     // DISCONNECT
