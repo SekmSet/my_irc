@@ -98,7 +98,6 @@ export default function Index() {
                     selectedChannel = messages.newChanName
                     setMessages(ms => [...ms, { nickname: messages.nickname, chat: `
                     the channel has been renamed in ${messages.newChanName}`, id: uniqid() }]);
-
                     socket.emit(events.channel.rename, messages.newChanName);
                 }
             });
